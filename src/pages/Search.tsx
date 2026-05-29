@@ -1,5 +1,6 @@
-import { Search, X, Loader2, Music, Video, Users, ArrowLeft } from 'lucide-react'
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion'
+import { ArrowLeft, ChevronRight, Loader2, Music, Play, Search, Sparkles, UserRound, Users, Video, X } from 'lucide-react'
+import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
 import { usePlayer } from '@/contexts/PlayerContext'
 import TrackActions from '@/components/TrackActions'
 import {
@@ -14,6 +15,22 @@ import type { Track } from '@/types'
 
 type SearchType = 'video' | 'user'
 type SelectedUser = { mid: number; name: string; avatar: string }
+
+const pageMotion = {
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.36, ease: [0.22, 1, 0.36, 1] },
+}
+
+const listMotion = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { staggerChildren: 0.035, delayChildren: 0.03 } },
+}
+
+const itemMotion = {
+  initial: { opacity: 0, y: 12, scale: 0.985 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+}
 
 function formatCount(n: number): string {
   if (n >= 100000000) return `${(n / 100000000).toFixed(1)}亿`
@@ -68,24 +85,38 @@ export default function SearchPage() {
   const currentQueryRef = useRef('')
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const handleSearch = useCallback(async (typeArg?: SearchType) => {
-    if (!query.trim()) return
-    const type = typeArg ?? searchType
+  const clearSearch = useCallback(() => {
+    setQuery('')
+    setHasSearched(false)
+    setResults([])
+    setUserResults([])
+    setSelectedUser(null)
+    setError(null)
+    setTotalResults(0)
+    pageRef.current = 1
+    totalPagesRef.current = 0
+    currentQueryRef.current = ''
+  }, [])
+
+  const executeSearch = useCallback(async (keyword: string, type: SearchType) => {
+    if (!keyword.trim()) return
+    const normalizedKeyword = keyword.trim()
     setLoading(true)
     setError(null)
     setSelectedUser(null)
     setResults([])
     setUserResults([])
     pageRef.current = 1
-    currentQueryRef.current = query.trim()
+    currentQueryRef.current = normalizedKeyword
+
     try {
       if (type === 'video') {
-        const data = await searchVideo(query.trim(), 1)
+        const data = await searchVideo(normalizedKeyword, 1)
         setResults(data.items)
         setTotalResults(data.totalResults)
         totalPagesRef.current = data.totalPages
       } else {
-        const data = await searchUsers(query.trim(), 1)
+        const data = await searchUsers(normalizedKeyword, 1)
         setUserResults(data.items)
         setTotalResults(data.totalResults)
         totalPagesRef.current = data.totalPages
@@ -97,7 +128,13 @@ export default function SearchPage() {
     } finally {
       setLoading(false)
     }
-  }, [query, searchType])
+  }, [])
+
+  const handleSearch = useCallback(async (typeArg?: SearchType) => {
+    const keyword = query.trim()
+    if (!keyword) return
+    await executeSearch(keyword, typeArg ?? searchType)
+  }, [executeSearch, query, searchType])
 
   const switchType = useCallback((type: SearchType) => {
     if (type === searchType) return
@@ -105,12 +142,13 @@ export default function SearchPage() {
     setSelectedUser(null)
     setResults([])
     setUserResults([])
+    setError(null)
     if (query.trim()) {
-      handleSearch(type)
+      executeSearch(query.trim(), type)
     } else {
       setHasSearched(false)
     }
-  }, [searchType, query, handleSearch])
+  }, [searchType, query, executeSearch])
 
   const loadMore = useCallback(async () => {
     if (loadingMore || pageRef.current >= totalPagesRef.current) return
@@ -127,13 +165,12 @@ export default function SearchPage() {
         setUserResults(prev => [...prev, ...data.items])
       }
     } catch {
-      // 加载更多失败静默处理
+      // 触底加载失败时保留现有结果，避免打断浏览。
     } finally {
       setLoadingMore(false)
     }
   }, [loadingMore, resultType])
 
-  // IntersectionObserver 触底加载（UP主空间视图有独立分页，故此处排除）
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel || !hasSearched || selectedUser) return
@@ -144,297 +181,252 @@ export default function SearchPage() {
           loadMore()
         }
       },
-      { rootMargin: '200px' },
+      { rootMargin: '240px' },
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [hasSearched, selectedUser, loadMore, results.length, userResults.length])
 
+  const hasAnyResults = resultType === 'video' ? results.length > 0 : userResults.length > 0
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-      {/* Search Bar */}
-      <div style={{ position: 'relative' }}>
+    <motion.div className="apple-search-page" {...pageMotion}>
+      <section className="apple-search-hero">
+        <div className="apple-search-hero__shine" />
+        <div className="apple-search-titlebar">
+          <div>
+            <p className="apple-search-eyebrow">Search</p>
+            <h1>搜索</h1>
+          </div>
+          <div className="apple-search-signal" aria-hidden="true">
+            <Sparkles size={16} />
+            <span>Music</span>
+          </div>
+        </div>
+
         <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '10px 16px',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(8px)',
-            border: `1px solid ${isFocused ? 'var(--color-primary)' : 'var(--glass-border)'}`,
-            boxShadow: isFocused ? '0 0 0 3px rgba(251,114,153,0.15)' : 'none',
-            transition: 'border-color var(--duration-fast), box-shadow var(--duration-fast)',
-          }}
+          className={`apple-search-input-shell ${isFocused ? 'is-focused' : ''} ${loading ? 'is-loading' : ''}`}
         >
-          {loading ? (
-            <Loader2 size={18} style={{ color: 'var(--color-primary)', flexShrink: 0, animation: 'spin 1s linear infinite' }} />
-          ) : (
-            <Search size={18} style={{ color: 'var(--color-muted)', flexShrink: 0 }} />
-          )}
+          <div className="apple-search-input-icon">
+            {loading ? <Loader2 size={20} className="spin" /> : <Search size={20} />}
+          </div>
           <input
             type="text"
-            placeholder={searchType === 'video' ? '搜索视频、音乐...' : '搜索 UP主...'}
+            placeholder={searchType === 'video' ? '歌曲、艺人、视频' : 'UP 主、音乐人、频道'}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+            onBlur={() => setTimeout(() => setIsFocused(false), 120)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            style={{
-              flex: 1,
-              border: 'none',
-              background: 'transparent',
-              outline: 'none',
-              fontSize: 'var(--text-body)',
-              color: 'var(--color-foreground)',
-              fontFamily: 'var(--font-body)',
-            }}
           />
-          {query && (
-            <button
-              onClick={() => { setQuery(''); setHasSearched(false); setResults([]); setUserResults([]); setSelectedUser(null) }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)', padding: 2 }}
-            >
-              <X size={16} />
-            </button>
-          )}
+          <AnimatePresence>
+            {query && (
+              <motion.button
+                key="clear"
+                type="button"
+                className="apple-search-clear"
+                onClick={clearSearch}
+                initial={{ opacity: 0, scale: 0.72 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.72 }}
+                whileTap={{ scale: 0.9 }}
+                title="清空"
+              >
+                <X size={15} />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
 
-      {/* 搜索类型切换 */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <TypeTab active={searchType === 'video'} icon={<Video size={15} />} label="视频" onClick={() => switchType('video')} />
-        <TypeTab active={searchType === 'user'} icon={<Users size={15} />} label="UP主" onClick={() => switchType('user')} />
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div
-          style={{
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'rgba(245,63,63,0.1)',
-            color: 'var(--color-destructive)',
-            fontSize: 'var(--text-body)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <X size={16} />
-          {error}
-          <button onClick={() => setError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-destructive)' }}>
-            关闭
-          </button>
-        </div>
-      )}
-
-      {/* UP主 空间视图 */}
-      {selectedUser ? (
-        <UserSpaceView user={selectedUser} onBack={() => setSelectedUser(null)} />
-      ) : hasSearched ? (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span className="text-body">
-              搜索结果: "<span style={{ color: 'var(--color-primary)' }}>{currentQueryRef.current}</span>"
-            </span>
-            <span className="text-caption" style={{ color: 'var(--color-muted)' }}>
-              {totalResults > 0 ? `共 ${totalResults.toLocaleString()} 条结果` : '无结果'}
-            </span>
+        <LayoutGroup>
+          <div className="apple-search-segment" role="tablist" aria-label="搜索类型">
+            <TypeTab active={searchType === 'video'} icon={<Video size={15} />} label="视频" onClick={() => switchType('video')} />
+            <TypeTab active={searchType === 'user'} icon={<Users size={15} />} label="UP主" onClick={() => switchType('user')} />
           </div>
+        </LayoutGroup>
+      </section>
 
-          {resultType === 'user' ? (
-            /* UP主 结果 */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {userResults.map((user) => (
-                <UserCard key={user.mid} user={user} onEnter={() => setSelectedUser({ mid: user.mid, name: user.name, avatar: user.avatar })} />
-              ))}
-            </div>
-          ) : (
-            /* 视频结果 — 音乐风列表 */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {results.map((result) => (
-                <VideoRow
-                  key={result.bvid || result.aid}
-                  track={searchItemToTrack(result)}
-                  subtitle={`${result.author} · ${formatCount(result.play)}播放`}
-                  durationText={result.duration}
-                />
-              ))}
-            </div>
-          )}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            className="apple-search-error"
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          >
+            <X size={16} />
+            <span>{error}</span>
+            <button onClick={() => setError(null)}>关闭</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Sentinel for infinite scroll */}
-          <div ref={sentinelRef} style={{ height: 1 }} />
-          {loadingMore && (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-md)', color: 'var(--color-muted)' }}>
-              <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
-            </div>
-          )}
-          {pageRef.current >= totalPagesRef.current && (results.length > 0 || userResults.length > 0) && (
-            <div className="text-caption" style={{ textAlign: 'center', color: 'var(--color-muted)', padding: 'var(--space-md)' }}>
-              — 已加载全部 {totalResults.toLocaleString()} 条结果 —
-            </div>
-          )}
-        </>
-      ) : (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 'var(--space-2xl)',
-            color: 'var(--color-muted)',
-          }}
-        >
-          <Search size={48} strokeWidth={1} style={{ marginBottom: 16 }} />
-          <p className="text-h3">{searchType === 'video' ? '搜索 B站视频' : '搜索 UP主'}</p>
-          <p className="text-caption" style={{ marginTop: 4 }}>
-            {searchType === 'video' ? '输入关键词搜索，点击歌曲加入播放列表' : '搜索 UP主，进入主页选择其投稿'}
-          </p>
-        </div>
-      )}
-    </div>
+      <AnimatePresence mode="wait">
+        {selectedUser ? (
+          <motion.div key="user-space" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: 0.28 }}>
+            <UserSpaceView user={selectedUser} onBack={() => setSelectedUser(null)} />
+          </motion.div>
+        ) : loading ? (
+          <motion.div key="loading" className="apple-search-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <ResultsHeader query={query.trim()} total={0} mutedText="正在搜索" />
+            <LoadingRows type={searchType} />
+          </motion.div>
+        ) : hasSearched ? (
+          <motion.section key={`${resultType}-${currentQueryRef.current}`} className="apple-search-results" {...listMotion}>
+            <ResultsHeader query={currentQueryRef.current} total={totalResults} mutedText={hasAnyResults ? undefined : '无结果'} />
+
+            {resultType === 'user' ? (
+              <motion.div className="apple-search-list" variants={listMotion}>
+                {userResults.map((user) => (
+                  <UserCard
+                    key={user.mid}
+                    user={user}
+                    onEnter={() => setSelectedUser({ mid: user.mid, name: user.name, avatar: user.avatar })}
+                  />
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div className="apple-search-list" variants={listMotion}>
+                {results.map((result) => (
+                  <VideoRow
+                    key={result.bvid || result.aid}
+                    track={searchItemToTrack(result)}
+                    subtitle={`${result.author} · ${formatCount(result.play)}播放`}
+                    durationText={result.duration}
+                  />
+                ))}
+              </motion.div>
+            )}
+
+            {!hasAnyResults && (
+              <EmptyState
+                title="没有找到结果"
+                caption="换一个关键词再试试"
+                icon={resultType === 'video' ? <Music size={30} /> : <UserRound size={30} />}
+              />
+            )}
+
+            <div ref={sentinelRef} style={{ height: 1 }} />
+            {loadingMore && (
+              <div className="apple-search-more">
+                <Loader2 size={22} className="spin" />
+              </div>
+            )}
+            {pageRef.current >= totalPagesRef.current && hasAnyResults && (
+              <div className="apple-search-end">已加载全部 {totalResults.toLocaleString()} 条结果</div>
+            )}
+          </motion.section>
+        ) : (
+          <motion.div key="empty" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }}>
+            <EmptySearchMode searchType={searchType} onSearch={(keyword) => { setQuery(keyword); executeSearch(keyword, searchType) }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }
 
-// ===== 搜索类型切换标签 =====
-function TypeTab({ active, icon, label, onClick }: { active: boolean; icon: React.ReactNode; label: string; onClick: () => void }) {
+function TypeTab({ active, icon, label, onClick }: { active: boolean; icon: ReactNode; label: string; onClick: () => void }) {
   return (
     <button
+      type="button"
+      className={`apple-search-tab ${active ? 'is-active' : ''}`}
       onClick={onClick}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '6px 16px',
-        borderRadius: 'var(--radius-full)',
-        background: active ? 'var(--color-primary)' : 'var(--glass-bg)',
-        color: active ? 'var(--color-on-primary)' : 'var(--color-muted-foreground)',
-        border: `1px solid ${active ? 'var(--color-primary)' : 'var(--glass-border)'}`,
-        fontSize: 13,
-        fontWeight: active ? 600 : 400,
-        cursor: 'pointer',
-        fontFamily: 'var(--font-body)',
-        transition: 'all var(--duration-fast)',
-      }}
+      role="tab"
+      aria-selected={active}
     >
-      {icon}
-      {label}
+      {active && <motion.span className="apple-search-tab__pill" layoutId="search-tab-pill" transition={{ type: 'spring', stiffness: 420, damping: 34 }} />}
+      <span className="apple-search-tab__content">
+        {icon}
+        {label}
+      </span>
     </button>
   )
 }
 
-// ===== 音乐风曲目行（搜索结果 / UP主投稿共用）=====
+function ResultsHeader({ query, total, mutedText }: { query: string; total: number; mutedText?: string }) {
+  return (
+    <motion.div className="apple-search-results-header" variants={itemMotion}>
+      <div>
+        <p>搜索结果</p>
+        <h2>{query ? `"${query}"` : '关键词'}</h2>
+      </div>
+      <span>{mutedText || `共 ${total.toLocaleString()} 项`}</span>
+    </motion.div>
+  )
+}
+
 function VideoRow({ track, subtitle, durationText }: {
   track: Track
   subtitle: string
   durationText?: string
 }) {
   const player = usePlayer()
-  const [hover, setHover] = useState(false)
   const isCurrent = player.currentTrack?.id === track.id
+
   return (
-    <div
+    <motion.div
+      className={`apple-search-row video-row ${isCurrent ? 'is-current' : ''}`}
       onClick={() => player.playNow(track)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-md)',
-        padding: '8px var(--space-md)',
-        cursor: 'pointer',
-        borderRadius: 'var(--radius-md)',
-        background: hover || isCurrent ? 'var(--color-primary-light)' : 'transparent',
-        transition: 'background var(--duration-fast)',
-      }}
+      variants={itemMotion}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.995 }}
+      transition={{ duration: 0.18 }}
     >
-      <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--color-border)', overflow: 'hidden', flexShrink: 0 }}>
+      <div className="apple-search-cover">
         {track.coverUrl ? (
-          <img src={track.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+          <img src={track.coverUrl} alt="" loading="lazy" />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Music size={18} style={{ color: 'var(--color-muted)' }} />
-          </div>
+          <div className="apple-search-cover__fallback"><Music size={20} /></div>
         )}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          className="text-body"
-          style={{
-            fontWeight: isCurrent ? 600 : 400,
-            color: isCurrent ? 'var(--color-primary)' : 'var(--color-foreground)',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}
-        >
-          {track.title}
-        </div>
-        <div className="text-caption" style={{ color: 'var(--color-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {subtitle}
+        <div className="apple-search-cover__play">
+          <Play size={18} fill="currentColor" />
         </div>
       </div>
-      {durationText && (
-        <span className="text-caption" style={{ color: 'var(--color-muted)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-          {durationText}
-        </span>
-      )}
-      <div style={{ opacity: hover ? 1 : 0.5, transition: 'opacity var(--duration-fast)', flexShrink: 0 }}>
+
+      <div className="apple-search-row__main">
+        <div className="apple-search-row__title">{track.title}</div>
+        <div className="apple-search-row__meta">{subtitle}</div>
+      </div>
+
+      {durationText && <span className="apple-search-duration">{durationText}</span>}
+      <div className="apple-search-actions">
         <TrackActions track={track} />
       </div>
-    </div>
+    </motion.div>
   )
 }
 
-// ===== UP主 结果行 =====
 function UserCard({ user, onEnter }: { user: UserResult; onEnter: () => void }) {
-  const [hover, setHover] = useState(false)
   return (
-    <div
+    <motion.div
+      className="apple-search-row user-row"
       onClick={onEnter}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-md)',
-        padding: '10px var(--space-md)',
-        cursor: 'pointer',
-        borderRadius: 'var(--radius-md)',
-        background: hover ? 'var(--color-primary-light)' : 'transparent',
-        transition: 'background var(--duration-fast)',
-      }}
+      variants={itemMotion}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.995 }}
+      transition={{ duration: 0.18 }}
     >
-      <div style={{ width: 52, height: 52, borderRadius: 'var(--radius-full)', background: 'var(--color-border)', overflow: 'hidden', flexShrink: 0 }}>
+      <div className="apple-search-avatar">
         {user.avatar ? (
-          <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+          <img src={user.avatar} alt="" loading="lazy" />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Users size={20} style={{ color: 'var(--color-muted)' }} />
-          </div>
+          <div className="apple-search-cover__fallback"><Users size={22} /></div>
         )}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="text-body" style={{ fontWeight: 600, color: 'var(--color-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {user.name}
-        </div>
-        <div className="text-caption" style={{ color: 'var(--color-muted)', marginTop: 1 }}>
-          {formatCount(user.fans)}粉丝 · {user.videoCount}个视频
-        </div>
-        {user.sign && (
-          <div className="text-caption" style={{ color: 'var(--color-muted)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: 0.75 }}>
-            {user.sign}
-          </div>
-        )}
+      <div className="apple-search-row__main">
+        <div className="apple-search-row__title">{user.name}</div>
+        <div className="apple-search-row__meta">{formatCount(user.fans)}粉丝 · {user.videoCount}个视频</div>
+        {user.sign && <div className="apple-search-user-sign">{user.sign}</div>}
       </div>
-      <span className="text-caption" style={{ color: 'var(--color-primary)', flexShrink: 0 }}>进入主页 →</span>
-    </div>
+      <div className="apple-search-enter">
+        <span>进入主页</span>
+        <ChevronRight size={16} />
+      </div>
+    </motion.div>
   )
 }
 
-// ===== UP主 空间（投稿视频列表）=====
 function UserSpaceView({ user, onBack }: { user: SelectedUser; onBack: () => void }) {
   const [videos, setVideos] = useState<UpVideo[]>([])
   const [loading, setLoading] = useState(true)
@@ -471,7 +463,7 @@ function UserSpaceView({ user, onBack }: { user: SelectedUser; onBack: () => voi
       pageRef.current = nextPage
       setVideos(prev => [...prev, ...data.items])
     } catch {
-      // 静默
+      // 追加失败不影响已经加载的投稿。
     } finally {
       setLoadingMore(false)
     }
@@ -482,7 +474,7 @@ function UserSpaceView({ user, onBack }: { user: SelectedUser; onBack: () => voi
     if (!sentinel) return
     const observer = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) loadMore() },
-      { rootMargin: '200px' },
+      { rootMargin: '240px' },
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
@@ -506,62 +498,40 @@ function UserSpaceView({ user, onBack }: { user: SelectedUser; onBack: () => voi
   }, [videos, player, toTrack])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-      {/* UP主 资料头部 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-        <button
-          onClick={onBack}
-          title="返回"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 36, height: 36, borderRadius: 'var(--radius-full)',
-            background: 'var(--glass-bg)', border: '1px solid var(--glass-border)',
-            color: 'var(--color-foreground)', cursor: 'pointer', flexShrink: 0,
-          }}
-        >
-          <ArrowLeft size={18} />
+    <section className="apple-user-space">
+      <motion.div className="apple-user-hero" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
+        <button type="button" className="apple-user-back" onClick={onBack} title="返回">
+          <ArrowLeft size={19} />
         </button>
-        <div style={{ width: 56, height: 56, borderRadius: 'var(--radius-full)', background: 'var(--color-border)', overflow: 'hidden', flexShrink: 0 }}>
-          {user.avatar ? (
-            <img src={user.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Users size={22} style={{ color: 'var(--color-muted)' }} />
-            </div>
-          )}
+        <div className="apple-user-avatar">
+          {user.avatar ? <img src={user.avatar} alt="" /> : <Users size={28} />}
         </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div className="text-h3" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
-          {total > 0 && <div className="text-caption" style={{ color: 'var(--color-muted)', marginTop: 2 }}>共 {total.toLocaleString()} 个投稿</div>}
+        <div className="apple-user-info">
+          <p>UP 主空间</p>
+          <h2>{user.name}</h2>
+          {total > 0 && <span>共 {total.toLocaleString()} 个投稿</span>}
         </div>
         {videos.length > 0 && (
-          <button
+          <motion.button
+            type="button"
+            className="apple-user-play"
             onClick={playAll}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '8px 18px', borderRadius: 'var(--radius-full)',
-              background: 'var(--color-primary)', color: 'var(--color-on-primary)',
-              border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              fontFamily: 'var(--font-body)', flexShrink: 0,
-            }}
+            whileHover={{ scale: 1.025 }}
+            whileTap={{ scale: 0.96 }}
           >
+            <Play size={17} fill="currentColor" />
             播放全部
-          </button>
+          </motion.button>
         )}
-      </div>
+      </motion.div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-3xl)', color: 'var(--color-muted)' }}>
-          <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-        </div>
+        <LoadingRows type="video" />
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: 'var(--space-2xl)', color: 'var(--color-muted)' }}>
-          <p className="text-body">{error}</p>
-          <button onClick={load} style={{ marginTop: 12, background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>重试</button>
-        </div>
+        <EmptyState title={error} caption="稍后再试或重新加载" icon={<X size={30} />} action={<button onClick={load}>重试</button>} />
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <motion.div className="apple-search-list" variants={listMotion} initial="initial" animate="animate">
             {videos.map((video) => (
               <VideoRow
                 key={video.bvid}
@@ -570,21 +540,79 @@ function UserSpaceView({ user, onBack }: { user: SelectedUser; onBack: () => voi
                 durationText={formatDuration(video.duration)}
               />
             ))}
-          </div>
+          </motion.div>
 
           <div ref={sentinelRef} style={{ height: 1 }} />
           {loadingMore && (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-md)', color: 'var(--color-muted)' }}>
-              <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+            <div className="apple-search-more">
+              <Loader2 size={22} className="spin" />
             </div>
           )}
           {videos.length >= total && videos.length > 0 && (
-            <div className="text-caption" style={{ textAlign: 'center', color: 'var(--color-muted)', padding: 'var(--space-md)' }}>
-              — 已加载全部 {total.toLocaleString()} 个投稿 —
-            </div>
+            <div className="apple-search-end">已加载全部 {total.toLocaleString()} 个投稿</div>
           )}
         </>
       )}
+    </section>
+  )
+}
+
+function EmptySearchMode({ searchType, onSearch }: { searchType: SearchType; onSearch: (keyword: string) => void }) {
+  const suggestions = searchType === 'video'
+    ? ['周杰伦', '新歌', 'Lo-fi', 'Live']
+    : ['音乐区官方', '钢琴', '翻唱', '电音']
+
+  return (
+    <section className="apple-search-empty">
+      <motion.div
+        className="apple-search-empty__icon"
+        animate={{ y: [0, -7, 0], rotate: [0, -3, 0] }}
+        transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        {searchType === 'video' ? <Music size={38} /> : <Users size={38} />}
+      </motion.div>
+      <h2>{searchType === 'video' ? '今天想听什么？' : '发现创作者'}</h2>
+      <div className="apple-search-suggestions">
+        {suggestions.map((item) => (
+          <motion.button
+            key={item}
+            type="button"
+            onClick={() => onSearch(item)}
+            whileHover={{ y: -2, scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
+          >
+            {item}
+          </motion.button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function EmptyState({ title, caption, icon, action }: { title: string; caption: string; icon: ReactNode; action?: ReactNode }) {
+  return (
+    <motion.div className="apple-search-state" variants={itemMotion}>
+      <div>{icon}</div>
+      <h3>{title}</h3>
+      <p>{caption}</p>
+      {action}
+    </motion.div>
+  )
+}
+
+function LoadingRows({ type }: { type: SearchType }) {
+  return (
+    <div className="apple-search-list">
+      {Array.from({ length: 7 }).map((_, index) => (
+        <div className="apple-search-row apple-search-row--skeleton" key={index}>
+          <div className={type === 'user' ? 'apple-search-avatar skeleton' : 'apple-search-cover skeleton'} />
+          <div className="apple-search-row__main">
+            <div className="skeleton skeleton-title" />
+            <div className="skeleton skeleton-meta" />
+          </div>
+          <div className="skeleton skeleton-time" />
+        </div>
+      ))}
     </div>
   )
 }
