@@ -67,6 +67,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('window:maximized-change', listener)
     return () => ipcRenderer.removeListener('window:maximized-change', listener)
   },
+  updateTrayPlayerState: (state) => ipcRenderer.send('tray:player-state', state),
+  onTrayPlayerCommand: (callback) => {
+    const listener = (_event, command) => callback(command)
+    ipcRenderer.on('tray:player-command', listener)
+    return () => ipcRenderer.removeListener('tray:player-command', listener)
+  },
   platform: 'win32',
   biliApi,
   lyricsApi,

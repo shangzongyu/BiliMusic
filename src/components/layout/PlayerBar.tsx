@@ -8,6 +8,7 @@ import {
   Shuffle,
   Repeat,
   Heart,
+  ListPlus,
   Volume2,
   VolumeX,
   ListMusic,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react'
 import { usePlayer } from '@/contexts/PlayerContext'
 import { useNowPlaying } from '@/contexts/NowPlayingContext'
+import { useAddToPlaylist } from '@/contexts/AddToPlaylistContext'
 import PlayQueue from '@/components/PlayQueue'
 import PlayerSlider from '@/components/PlayerSlider'
 
@@ -36,6 +38,7 @@ const sliderVars = {
 export default function PlayerBar() {
   const player = usePlayer()
   const { open } = useNowPlaying()
+  const { openAddToPlaylist } = useAddToPlaylist()
   const [queueOpen, setQueueOpen] = useState(false)
   const trackDuration = player.duration || player.currentTrack?.duration || 0
   const remaining = Math.max(trackDuration - player.progress, 0)
@@ -218,16 +221,24 @@ export default function PlayerBar() {
         </motion.button>
 
         {player.currentTrack && (
-          <IconButton
-            active={Boolean(player.currentTrack.isLiked)}
-            ariaLabel="喜欢"
-            onClick={() => player.toggleLike(player.currentTrack!.id)}
-          >
-            <Heart
-              size={18}
-              fill={player.currentTrack.isLiked ? 'currentColor' : 'none'}
-            />
-          </IconButton>
+          <>
+            <IconButton
+              ariaLabel="添加至歌单"
+              onClick={() => openAddToPlaylist(player.currentTrack!)}
+            >
+              <ListPlus size={18} />
+            </IconButton>
+            <IconButton
+              active={Boolean(player.currentTrack.isLiked)}
+              ariaLabel="喜欢"
+              onClick={() => player.toggleLike(player.currentTrack!.id)}
+            >
+              <Heart
+                size={18}
+                fill={player.currentTrack.isLiked ? 'currentColor' : 'none'}
+              />
+            </IconButton>
+          </>
         )}
       </div>
 

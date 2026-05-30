@@ -8,9 +8,11 @@ import {
   Play,
   ListStart,
   ListChecks,
+  ListPlus,
   Check,
 } from 'lucide-react'
 import { usePlayer } from '@/contexts/PlayerContext'
+import { useAddToPlaylist } from '@/contexts/AddToPlaylistContext'
 import type { Track } from '@/types'
 
 const panelSpring = {
@@ -22,6 +24,7 @@ const panelSpring = {
 
 export default function PlayQueue({ open, onClose }: { open: boolean; onClose: () => void }) {
   const player = usePlayer()
+  const { openAddToPlaylist } = useAddToPlaylist()
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [dragIndex, setDragIndex] = useState<number | null>(null)
@@ -206,6 +209,7 @@ export default function PlayQueue({ open, onClose }: { open: boolean; onClose: (
                         onPlay={() => player.play(track)}
                         onSelect={() => toggleSelect(track.id)}
                         onPlayNext={() => player.playNext(track)}
+                        onAddToPlaylist={() => openAddToPlaylist(track)}
                         onRemove={() => player.removeFromQueue(track.id)}
                         onDragStart={() => setDragIndex(index)}
                         onDragOver={() => setOverIndex(index)}
@@ -297,6 +301,7 @@ function QueueRow({
   onPlay,
   onSelect,
   onPlayNext,
+  onAddToPlaylist,
   onRemove,
   onDragStart,
   onDragOver,
@@ -312,6 +317,7 @@ function QueueRow({
   onPlay: () => void
   onSelect: () => void
   onPlayNext: () => void
+  onAddToPlaylist: () => void
   onRemove: () => void
   onDragStart: () => void
   onDragOver: () => void
@@ -439,7 +445,7 @@ function QueueRow({
       </div>
 
       <AnimatePresence>
-        {!selecting && hover && !isCurrent && (
+        {!selecting && hover && (
           <motion.div
             initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
@@ -448,14 +454,25 @@ function QueueRow({
             style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}
           >
             <IconButton
-              title="下一首播放"
+              title="添加至歌单"
               onClick={(e) => {
                 e.stopPropagation()
-                onPlayNext()
+                onAddToPlaylist()
               }}
             >
-              <ListStart size={16} />
+              <ListPlus size={16} />
             </IconButton>
+            {!isCurrent && (
+              <IconButton
+                title="下一首播放"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onPlayNext()
+                }}
+              >
+                <ListStart size={16} />
+              </IconButton>
+            )}
             <IconButton
               title="从队列移除"
               danger

@@ -66,6 +66,17 @@ interface LyricsApi {
   get: (id: string | number, format?: 'lrc' | 'qrc' | 'ksc') => Promise<OiapiLyricData | null>
 }
 
+export interface TrayPlayerState {
+  hasTrack: boolean
+  title: string
+  artist: string
+  coverUrl: string
+  isPlaying: boolean
+  queueLength: number
+}
+
+export type TrayPlayerCommand = 'toggle-play' | 'next' | 'prev'
+
 declare global {
   interface Window {
     electronAPI: {
@@ -74,6 +85,8 @@ declare global {
       close: () => void
       isMaximized?: () => Promise<boolean>
       onMaximizedChange?: (callback: (isMaximized: boolean) => void) => () => void
+      updateTrayPlayerState?: (state: TrayPlayerState) => void
+      onTrayPlayerCommand?: (callback: (command: TrayPlayerCommand) => void) => () => void
       platform: string
       biliApi: BiliApi
       lyricsApi: LyricsApi

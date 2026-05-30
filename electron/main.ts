@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session } from 'electron'
+import { app, BrowserWindow, Tray, ipcMain, nativeImage, screen, session } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { registerBiliApiHandlers } from './biliApi'
@@ -69,6 +69,311 @@ function setupBiliHeaders() {
 }
 
 let mainWindow: BrowserWindow | null = null
+let tray: Tray | null = null
+let trayWindow: BrowserWindow | null = null
+let isQuitting = false
+
+type TrayCommand = 'toggle-play' | 'next' | 'prev' | 'show-window' | 'quit'
+
+interface TrayPlayerState {
+  hasTrack: boolean
+  title: string
+  artist: string
+  coverUrl: string
+  isPlaying: boolean
+  queueLength: number
+}
+
+let trayPlayerState: TrayPlayerState = {
+  hasTrack: false,
+  title: '未在播放',
+  artist: '搜索并播放音乐',
+  coverUrl: '',
+  isPlaying: false,
+  queueLength: 0,
+}
+
+function createTrayIcon() {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+      <defs>
+        <linearGradient id="g" x1="12" y1="8" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ff6b9c"/>
+          <stop offset="1" stop-color="#ff375f"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="18" fill="url(#g)"/>
+      <path d="M42 15v27.4c0 5.1-4.3 8.9-9.6 8.9-4.2 0-7.4-2.4-7.4-5.7 0-3.7 3.9-6.2 8.5-6.2 1.4 0 2.7.2 3.9.7V23.8l-17.2 3.6v19.1c0 5.1-4.3 8.9-9.6 8.9-4.2 0-7.4-2.4-7.4-5.7 0-3.7 3.9-6.2 8.5-6.2 1.4 0 2.7.2 3.9.7V22.3c0-1.2.8-2.2 2-2.4l21.6-4.5c1.5-.3 2.8.8 2.8 2.3Z" transform="translate(9 -3)" fill="white" opacity=".96"/>
+    </svg>`
+  return nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`)
+}
+
+function showMainWindow() {
+  if (!mainWindow) createWindow()
+  if (process.platform === 'darwin') app.dock?.show()
+  mainWindow?.show()
+  if (mainWindow?.isMinimized()) mainWindow.restore()
+  mainWindow?.focus()
+}
+
+function updateTrayState() {
+  tray?.setToolTip(trayPlayerState.hasTrack
+    ? `${trayPlayerState.isPlaying ? '正在播放' : '已暂停'}: ${trayPlayerState.title}`
+    : 'biliMusic')
+  trayWindow?.webContents.send('tray:state', trayPlayerState)
+}
+
+function getTrayHtml() {
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+    body {
+      width: 330px;
+      height: 292px;
+      margin: 0;
+      overflow: hidden;
+      color: #f7f7f8;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: transparent;
+    }
+    .menu {
+      width: 100%;
+      height: 100%;
+      padding: 14px;
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(38, 38, 42, .94), rgba(18, 18, 20, .96)),
+        rgba(24, 24, 26, .96);
+      border: 1px solid rgba(255, 255, 255, .12);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .44), inset 0 1px rgba(255, 255, 255, .12);
+      backdrop-filter: blur(30px) saturate(160%);
+    }
+    .now {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-height: 76px;
+      padding: 10px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .075);
+      border: 1px solid rgba(255, 255, 255, .08);
+    }
+    .cover {
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex: 0 0 auto;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(255,55,95,.42), rgba(255,255,255,.08));
+      box-shadow: 0 12px 30px rgba(0,0,0,.22);
+    }
+    .cover img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .cover span { color: rgba(255,255,255,.62); font-size: 22px; }
+    .meta { min-width: 0; flex: 1; }
+    .meta strong, .meta small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .meta strong { font-size: 14px; line-height: 1.2; font-weight: 760; }
+    .meta small { margin-top: 5px; color: rgba(255,255,255,.48); font-size: 12px; font-weight: 560; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 12px 2px 10px;
+      color: rgba(255,255,255,.44);
+      font-size: 11px;
+      font-weight: 680;
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #8e8e93;
+      box-shadow: 0 0 0 transparent;
+    }
+    .status.is-playing .dot {
+      background: #30d158;
+      box-shadow: 0 0 14px rgba(48,209,88,.65);
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr 1fr;
+      gap: 10px;
+      padding: 0 4px 12px;
+    }
+    button {
+      height: 42px;
+      border: 0;
+      border-radius: 999px;
+      color: #fff;
+      background: rgba(255,255,255,.1);
+      cursor: pointer;
+      font: 780 13px/1 system-ui, sans-serif;
+      transition: transform .16s ease, background .16s ease, opacity .16s ease;
+    }
+    button:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+    button:active { transform: scale(.96); }
+    button:disabled { opacity: .42; cursor: default; transform: none; }
+    .play {
+      background: #ff375f;
+      box-shadow: 0 14px 30px rgba(255,55,95,.26);
+      font-size: 16px;
+    }
+    .actions {
+      display: grid;
+      gap: 8px;
+      border-top: 1px solid rgba(255,255,255,.1);
+      padding-top: 12px;
+    }
+    .row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 13px;
+      text-align: left;
+      border-radius: 12px;
+      background: transparent;
+      color: rgba(255,255,255,.82);
+    }
+    .row:hover { background: rgba(255,255,255,.1); }
+    .row.danger { color: #ff6961; }
+    .count { color: rgba(255,255,255,.38); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="menu">
+    <div class="now">
+      <div class="cover"><img id="cover" /><span id="fallback">♪</span></div>
+      <div class="meta">
+        <strong id="title">未在播放</strong>
+        <small id="artist">搜索并播放音乐</small>
+      </div>
+    </div>
+    <div id="status" class="status"><span class="dot"></span><span id="statusText">空闲</span></div>
+    <div class="controls">
+      <button id="prev" title="上一首">⏮</button>
+      <button id="play" class="play" title="播放/暂停">▶</button>
+      <button id="next" title="下一首">⏭</button>
+    </div>
+    <div class="actions">
+      <button class="row" id="show"><span>显示 biliMusic</span><span class="count" id="queue">0 首</span></button>
+      <button class="row danger" id="quit"><span>退出应用</span><span>⌘Q</span></button>
+    </div>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron')
+    const $ = (id) => document.getElementById(id)
+    let state = { hasTrack: false, title: '未在播放', artist: '搜索并播放音乐', coverUrl: '', isPlaying: false, queueLength: 0 }
+    function render(next) {
+      state = next || state
+      $('title').textContent = state.title || '未在播放'
+      $('artist').textContent = state.artist || '搜索并播放音乐'
+      $('status').className = 'status' + (state.isPlaying ? ' is-playing' : '')
+      $('statusText').textContent = state.hasTrack ? (state.isPlaying ? '正在播放' : '已暂停') : '空闲'
+      $('play').textContent = state.isPlaying ? '⏸' : '▶'
+      $('queue').textContent = (state.queueLength || 0) + ' 首'
+      $('prev').disabled = $('play').disabled = $('next').disabled = !state.hasTrack
+      if (state.coverUrl) {
+        $('cover').src = state.coverUrl
+        $('cover').style.display = 'block'
+        $('fallback').style.display = 'none'
+      } else {
+        $('cover').removeAttribute('src')
+        $('cover').style.display = 'none'
+        $('fallback').style.display = 'block'
+      }
+    }
+    ipcRenderer.on('tray:state', (_event, next) => render(next))
+    ipcRenderer.invoke('tray:get-state').then(render)
+    $('prev').onclick = () => ipcRenderer.send('tray:command', 'prev')
+    $('play').onclick = () => ipcRenderer.send('tray:command', 'toggle-play')
+    $('next').onclick = () => ipcRenderer.send('tray:command', 'next')
+    $('show').onclick = () => ipcRenderer.send('tray:command', 'show-window')
+    $('quit').onclick = () => ipcRenderer.send('tray:command', 'quit')
+  </script>
+</body>
+</html>`
+}
+
+function createTrayWindow() {
+  if (trayWindow) return trayWindow
+  trayWindow = new BrowserWindow({
+    width: 330,
+    height: 292,
+    show: false,
+    frame: false,
+    resizable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    transparent: true,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  })
+  trayWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(getTrayHtml())}`)
+  trayWindow.on('blur', () => trayWindow?.hide())
+  trayWindow.on('closed', () => {
+    trayWindow = null
+  })
+  return trayWindow
+}
+
+function toggleTrayWindow() {
+  if (!tray) return
+  const win = createTrayWindow()
+  if (win.isVisible()) {
+    win.hide()
+    return
+  }
+
+  const bounds = tray.getBounds()
+  const { workArea } = screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y })
+  const width = 330
+  const height = 292
+  const x = Math.round(Math.min(Math.max(bounds.x + bounds.width / 2 - width / 2, workArea.x + 8), workArea.x + workArea.width - width - 8))
+  const aboveY = bounds.y - height - 10
+  const belowY = bounds.y + bounds.height + 10
+  const y = aboveY >= workArea.y ? aboveY : Math.min(belowY, workArea.y + workArea.height - height - 8)
+
+  win.setPosition(x, Math.round(y), false)
+  win.show()
+  win.focus()
+  updateTrayState()
+}
+
+function createTray() {
+  if (tray) return
+  tray = new Tray(createTrayIcon())
+  tray.setToolTip('biliMusic')
+  tray.on('click', showMainWindow)
+  tray.on('double-click', showMainWindow)
+  tray.on('right-click', toggleTrayWindow)
+}
+
+function hideToTray() {
+  mainWindow?.hide()
+  if (process.platform === 'darwin') app.dock?.hide()
+}
+
+function sendTrayCommand(command: TrayCommand) {
+  if (command === 'show-window') {
+    showMainWindow()
+    trayWindow?.hide()
+    return
+  }
+  if (command === 'quit') {
+    isQuitting = true
+    trayWindow?.close()
+    mainWindow?.destroy()
+    app.quit()
+    return
+  }
+  mainWindow?.webContents.send('tray:player-command', command)
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -95,6 +400,12 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
+  mainWindow.on('close', (event) => {
+    if (isQuitting) return
+    event.preventDefault()
+    hideToTray()
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
@@ -117,20 +428,35 @@ ipcMain.on('window:maximize', () => {
     mainWindow?.maximize()
   }
 })
-ipcMain.on('window:close', () => mainWindow?.close())
+ipcMain.on('window:close', hideToTray)
 ipcMain.handle('window:isMaximized', () => Boolean(mainWindow?.isMaximized() || mainWindow?.isFullScreen()))
+ipcMain.on('tray:player-state', (_event, state: TrayPlayerState) => {
+  trayPlayerState = {
+    hasTrack: Boolean(state?.hasTrack),
+    title: String(state?.title || '未在播放'),
+    artist: String(state?.artist || '搜索并播放音乐'),
+    coverUrl: String(state?.coverUrl || ''),
+    isPlaying: Boolean(state?.isPlaying),
+    queueLength: Number(state?.queueLength || 0),
+  }
+  updateTrayState()
+})
+ipcMain.on('tray:command', (_event, command: TrayCommand) => sendTrayCommand(command))
+ipcMain.handle('tray:get-state', () => trayPlayerState)
 
 app.whenReady().then(() => {
   setupBiliHeaders()
   registerBiliApiHandlers()
   registerLyricsApiHandlers()
   createWindow()
+  createTray()
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  if (isQuitting && process.platform !== 'darwin') app.quit()
 })
 
 app.on('activate', () => {
   if (mainWindow === null) createWindow()
+  else showMainWindow()
 })

@@ -400,6 +400,25 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     shuffledQueueRef.current = isShuffled ? shuffleArray(queue) : queue
   }, [queue, isShuffled])
 
+  useEffect(() => {
+    window.electronAPI?.updateTrayPlayerState?.({
+      hasTrack: Boolean(currentTrack),
+      title: currentTrack?.title || '未在播放',
+      artist: currentTrack?.artist || '搜索并播放音乐',
+      coverUrl: currentTrack?.coverUrl || '',
+      isPlaying,
+      queueLength: queue.length,
+    })
+  }, [currentTrack?.artist, currentTrack?.coverUrl, currentTrack?.id, currentTrack?.title, isPlaying, queue.length])
+
+  useEffect(() => {
+    return window.electronAPI?.onTrayPlayerCommand?.((command) => {
+      if (command === 'toggle-play') togglePlay()
+      if (command === 'next') next()
+      if (command === 'prev') prev()
+    })
+  }, [next, prev, togglePlay])
+
   return (
     <PlayerContext.Provider
       value={{
