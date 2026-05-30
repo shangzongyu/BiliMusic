@@ -1,5 +1,6 @@
 import { ListStart, Plus, Check } from 'lucide-react'
 import { usePlayer } from '@/contexts/PlayerContext'
+import AddToPlaylistButton from '@/components/AddToPlaylistButton'
 import type { Track } from '@/types'
 
 /**
@@ -28,6 +29,7 @@ export default function TrackActions({ track, size = 16 }: { track: Track; size?
         icon={queued ? <Check size={size} /> : <Plus size={size} />}
         color={queued ? 'var(--color-muted)' : undefined}
       />
+      <AddToPlaylistButton track={track} size={size} />
     </div>
   )
 }
@@ -42,21 +44,8 @@ function ActionButton({ title, onClick, icon, color }: {
     <button
       onClick={onClick}
       title={title}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 30,
-        height: 30,
-        borderRadius: 'var(--radius-full)',
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        color: color || 'var(--color-muted-foreground)',
-        transition: 'color var(--duration-fast), background var(--duration-fast)',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; e.currentTarget.style.background = 'var(--color-primary-light)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.color = color || 'var(--color-muted-foreground)'; e.currentTarget.style.background = 'none' }}
+      className="track-action-button"
+      style={{ color: color || undefined }}
     >
       {icon}
     </button>

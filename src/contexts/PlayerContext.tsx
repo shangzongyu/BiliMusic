@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useRef, useEffect, ty
 import type { Track, RepeatMode } from '@/types'
 import { extractAudio } from '@/services/api'
 import { addRecentTrack, toggleFavoriteTrack, loadFavoriteTracks } from '@/utils/storage'
+import { useAppSettings } from '@/hooks/useAppSettings'
 
 interface PlayerState {
   currentTrack: Track | null
@@ -54,6 +55,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const { settings } = useAppSettings()
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -120,6 +122,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   const handleTrackEnd = useCallback(() => {
     const displayQueue = isShuffled ? shuffledQueueRef.current : queue
+    if (!settings.autoPlay && repeatMode !== 'one') {
+      setIsPlaying(false)
+      return
+    }
     if (displayQueue.length === 0) {
       setIsPlaying(false)
       return
@@ -153,7 +159,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying(true)
       }
     }
-  }, [isShuffled, queue, repeatMode])
+  }, [isShuffled, queue, repeatMode, settings.autoPlay])
 
   // 当 currentTrack 变化时加载并播放音频
   useEffect(() => {

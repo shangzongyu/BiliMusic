@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { usePlayer } from '@/contexts/PlayerContext'
 import { useNowPlaying } from '@/contexts/NowPlayingContext'
+import { useAppSettings } from '@/hooks/useAppSettings'
 import { useLyrics } from '@/hooks/useLyrics'
 import PlayerSlider from '@/components/PlayerSlider'
 import LyricsView from '@/components/LyricsView'
@@ -23,8 +24,9 @@ const noDrag = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 export default function NowPlaying() {
   const player = usePlayer()
   const { expanded, close } = useNowPlaying()
+  const { settings } = useAppSettings()
   const track = player.currentTrack
-  const lyrics = useLyrics(track, expanded)
+  const lyrics = useLyrics(track, expanded && settings.showLyrics)
   const duration = player.duration || track?.duration || 0
 
   useEffect(() => {
@@ -195,7 +197,15 @@ export default function NowPlaying() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ ...spring, delay: 0.16 }}
             >
-              <LyricsPanel lyrics={lyrics} track={track} onSeek={player.setProgress} currentTime={player.progress} />
+              {settings.showLyrics ? (
+                <LyricsPanel lyrics={lyrics} track={track} onSeek={player.setProgress} currentTime={player.progress} />
+              ) : (
+                <Centered>
+                  <Music size={42} strokeWidth={1.25} />
+                  <strong>歌词显示已关闭</strong>
+                  <span>可以在设置中重新开启歌词显示</span>
+                </Centered>
+              )}
             </motion.section>
           </main>
         </motion.div>

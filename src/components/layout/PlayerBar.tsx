@@ -28,9 +28,9 @@ const spring = {
 } as const
 
 const sliderVars = {
-  '--track-bg': 'rgba(255, 255, 255, 0.1)',
-  '--track-fill': 'rgba(255, 255, 255, 0.7)',
-  '--track-thumb': '#ffffff',
+  '--track-bg': 'var(--player-track-bg)',
+  '--track-fill': 'var(--player-track-fill)',
+  '--track-thumb': 'var(--player-track-thumb)',
 } as CSSProperties
 
 export default function PlayerBar() {
@@ -48,13 +48,12 @@ export default function PlayerBar() {
       style={{
         height: 82,
         width: '100%',
-        background:
-          'linear-gradient(180deg, rgba(31, 31, 33, 0.78) 0%, rgba(18, 18, 20, 0.92) 100%)',
+        background: 'var(--player-bg)',
         backdropFilter: 'blur(30px) saturate(155%)',
         WebkitBackdropFilter: 'blur(30px) saturate(155%)',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 -22px 50px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.04)',
-        color: '#fff',
+        borderTop: '1px solid var(--player-border)',
+        boxShadow: 'var(--player-shadow)',
+        color: 'var(--player-text)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -80,7 +79,7 @@ export default function PlayerBar() {
           type="button"
           onClick={() => { if (player.currentTrack) open() }}
           title={player.currentTrack ? '查看歌词' : undefined}
-          whileHover={player.currentTrack ? { backgroundColor: 'rgba(255, 255, 255, 0.1)' } : undefined}
+          whileHover={player.currentTrack ? { backgroundColor: 'var(--player-hover)' } : undefined}
           whileTap={player.currentTrack ? { scale: 0.985 } : undefined}
           transition={{ duration: 0.2 }}
           style={{
@@ -90,7 +89,7 @@ export default function PlayerBar() {
             border: 'none',
             borderRadius: 14,
             background: 'transparent',
-            color: '#fff',
+            color: 'var(--player-text)',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
@@ -107,10 +106,10 @@ export default function PlayerBar() {
               height: 50,
               borderRadius: 8,
               background: player.currentTrack
-                ? 'rgba(255, 255, 255, 0.08)'
-                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04))',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              boxShadow: '0 12px 26px rgba(0, 0, 0, 0.26), inset 0 1px rgba(255, 255, 255, 0.08)',
+                ? 'var(--player-cover-bg)'
+                : 'linear-gradient(135deg, var(--player-cover-bg), transparent)',
+              border: '1px solid var(--player-cover-border)',
+              boxShadow: 'var(--player-cover-shadow)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -151,7 +150,7 @@ export default function PlayerBar() {
                 </motion.div>
               </>
             ) : (
-              <Music size={21} strokeWidth={2} style={{ color: 'rgba(255, 255, 255, 0.36)' }} />
+              <Music size={21} strokeWidth={2} style={{ color: 'var(--player-subtle-text)' }} />
             )}
           </motion.div>
 
@@ -162,7 +161,7 @@ export default function PlayerBar() {
                   layoutId="np-title"
                   transition={{ type: 'spring', stiffness: 300, damping: 32 }}
                   style={{
-                    color: 'rgba(255, 255, 255, 0.95)',
+                    color: 'var(--player-text)',
                     fontSize: 14,
                     fontWeight: 650,
                     lineHeight: 1.2,
@@ -178,7 +177,7 @@ export default function PlayerBar() {
                   transition={{ type: 'spring', stiffness: 300, damping: 32 }}
                   style={{
                     marginTop: 4,
-                    color: 'rgba(255, 255, 255, 0.46)',
+                    color: 'var(--player-subtle-text)',
                     fontSize: 12,
                     fontWeight: 500,
                     lineHeight: 1.2,
@@ -194,7 +193,7 @@ export default function PlayerBar() {
               <>
                 <div
                   style={{
-                    color: 'rgba(255, 255, 255, 0.42)',
+                    color: 'var(--player-subtle-text)',
                     fontSize: 14,
                     fontWeight: 600,
                     lineHeight: 1.2,
@@ -205,7 +204,7 @@ export default function PlayerBar() {
                 <div
                   style={{
                     marginTop: 4,
-                    color: 'rgba(255, 255, 255, 0.28)',
+                    color: 'var(--player-faint-text)',
                     fontSize: 12,
                     fontWeight: 500,
                     lineHeight: 1.2,
@@ -347,7 +346,7 @@ export default function PlayerBar() {
                 borderRadius: 999,
                 background: '#ff375f',
                 color: '#fff',
-                border: '2px solid rgb(22, 22, 24)',
+                border: '2px solid var(--color-background)',
                 fontSize: 9,
                 fontWeight: 800,
                 lineHeight: '11px',
@@ -401,17 +400,17 @@ function PlayButton({ isPlaying, loading, onClick }: { isPlaying: boolean; loadi
       type="button"
       onClick={onClick}
       disabled={loading}
-      whileHover={{ scale: loading ? 1 : 1.06, backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+      whileHover={{ scale: loading ? 1 : 1.06, backgroundColor: 'var(--player-hover)' }}
       whileTap={{ scale: loading ? 1 : 0.94 }}
       transition={spring}
       style={{
         width: 42,
         height: 42,
         borderRadius: 999,
-        background: 'rgba(255, 255, 255, 0.12)',
-        color: '#fff',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: 'inset 0 1px rgba(255, 255, 255, 0.1), 0 10px 24px rgba(0, 0, 0, 0.2)',
+        background: 'var(--player-control-bg)',
+        color: 'var(--player-text)',
+        border: '1px solid var(--player-border)',
+        boxShadow: 'var(--player-cover-shadow)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -456,7 +455,7 @@ function TransportButton({
       type="button"
       aria-label={ariaLabel}
       onClick={onClick}
-      whileHover={{ y: -1, color: active ? '#ff375f' : '#fff' }}
+        whileHover={{ y: -1, color: active ? '#ff375f' : 'var(--player-text)' }}
       whileTap={{ scale: 0.9 }}
       transition={{ duration: 0.18 }}
       style={{
@@ -465,7 +464,7 @@ function TransportButton({
         padding: 0,
         background: 'none',
         border: 'none',
-        color: active ? '#ff375f' : 'rgba(255, 255, 255, 0.45)',
+        color: active ? '#ff375f' : 'var(--player-subtle-text)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -495,8 +494,8 @@ function IconButton({
       onClick={onClick}
       whileHover={{
         scale: 1.04,
-        backgroundColor: active ? 'rgba(255, 55, 95, 0.16)' : 'rgba(255, 255, 255, 0.1)',
-        color: active ? '#ff375f' : '#fff',
+        backgroundColor: active ? 'rgba(255, 55, 95, 0.16)' : 'var(--player-hover)',
+        color: active ? '#ff375f' : 'var(--player-text)',
       }}
       whileTap={{ scale: 0.9 }}
       transition={{ duration: 0.18 }}
@@ -507,7 +506,7 @@ function IconButton({
         borderRadius: 999,
         border: 'none',
         background: active ? 'rgba(255, 55, 95, 0.12)' : 'transparent',
-        color: active ? '#ff375f' : 'rgba(255, 255, 255, 0.46)',
+        color: active ? '#ff375f' : 'var(--player-subtle-text)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -523,7 +522,7 @@ function TimeLabel({ children, align = 'left' }: { children: ReactNode; align?: 
   return (
     <span
       style={{
-        color: 'rgba(255, 255, 255, 0.42)',
+        color: 'var(--player-subtle-text)',
         fontSize: 11,
         fontWeight: 600,
         lineHeight: 1,

@@ -27,6 +27,15 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 export type RepeatMode = 'none' | 'one' | 'all'
 export type SidebarState = 'expanded' | 'collapsed' | 'auto'
 
+export interface AppSettings {
+  sidebarState: SidebarState
+  playQuality: '标准' | '高品质' | '无损'
+  downloadQuality: '标准' | '高品质' | '无损'
+  downloadDir: string
+  autoPlay: boolean
+  showLyrics: boolean
+}
+
 export type NavItem = {
   icon: string
   label: string

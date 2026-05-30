@@ -1,315 +1,261 @@
-import { Sun, Moon, Monitor, LogOut, LogIn } from 'lucide-react'
+import { useRef, useState, type ReactNode } from 'react'
+import {
+  FileDown,
+  FileUp,
+  Download,
+  FolderOpen,
+  Info,
+  LogIn,
+  LogOut,
+  Monitor,
+  Moon,
+  Music2,
+  Palette,
+  Settings as SettingsIcon,
+  Sun,
+  UserRound,
+} from 'lucide-react'
+import { ActionButton, MusicHero, MusicPageShell, MusicSection } from '@/components/AppleMusicPage'
 import { useTheme } from '@/hooks/useTheme'
+import { useAppSettings } from '@/hooks/useAppSettings'
 import { useAuth } from '@/contexts/AuthContext'
-import type { ThemeMode } from '@/types'
+import { createPlaylistsExport, importPlaylistsFromText } from '@/utils/storage'
+import type { AppSettings, SidebarState, ThemeMode } from '@/types'
 
 export default function Settings() {
   const { mode, setMode } = useTheme()
+  const { settings, setAppSettings } = useAppSettings()
   const { isLoggedIn, username, avatar, logout, setShowLogin } = useAuth()
+  const importInputRef = useRef<HTMLInputElement | null>(null)
+  const [playlistTransferMessage, setPlaylistTransferMessage] = useState('')
+  const [aboutMessage, setAboutMessage] = useState('')
+
+  const changeDownloadDir = () => {
+    const next = window.prompt('请输入下载目录', settings.downloadDir)
+    if (next?.trim()) setAppSettings({ downloadDir: next.trim() })
+  }
+
+  const exportPlaylists = () => {
+    const payload = createPlaylistsExport()
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `bilimusic-playlists-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+    setPlaylistTransferMessage(`已导出 ${payload.playlists.length} 个歌单`)
+  }
+
+  const importPlaylists = async (file?: File) => {
+    if (!file) return
+    try {
+      const result = importPlaylistsFromText(await file.text())
+      setPlaylistTransferMessage(`已导入 ${result.imported} 个歌单${result.skipped ? `，跳过 ${result.skipped} 个无效项目` : ''}`)
+    } catch (error) {
+      setPlaylistTransferMessage(error instanceof Error ? error.message : '导入失败，请检查文件格式')
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = ''
+    }
+  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2xl)' }}>
-      <h1 className="text-h1">设置</h1>
-
-      {/* Appearance */}
-      <SettingsGroup title="外观">
-        <SettingsRow label="主题模式">
-          <RadioGroup
-            options={[
-              { value: 'light' as ThemeMode, label: '浅色', icon: <Sun size={14} /> },
-              { value: 'dark' as ThemeMode, label: '深色', icon: <Moon size={14} /> },
-              { value: 'system' as ThemeMode, label: '跟随系统', icon: <Monitor size={14} /> },
-            ]}
-            value={mode}
-            onChange={setMode}
-          />
-        </SettingsRow>
-        <SettingsRow label="侧边栏">
-          <RadioGroup
-            options={[
-              { value: 'expanded', label: '展开' },
-              { value: 'collapsed', label: '折叠' },
-              { value: 'auto', label: '自动' },
-            ]}
-            value="auto"
-            onChange={() => {}}
-          />
-        </SettingsRow>
-      </SettingsGroup>
-
-      {/* Playback */}
-      <SettingsGroup title="播放">
-        <SettingsRow label="音质">
-          <select
-            style={{
-              padding: '8px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              fontSize: 'var(--text-caption)',
-              color: 'var(--color-foreground)',
-              fontFamily: 'var(--font-body)',
-              cursor: 'pointer',
-              width: 120,
-            }}
-          >
-            <option>标准</option>
-            <option>高品质</option>
-            <option>无损</option>
-          </select>
-        </SettingsRow>
-        <SettingsRow label="自动播放" description="播放结束时自动播放推荐">
-          <ToggleSwitch checked={true} onChange={() => {}} />
-        </SettingsRow>
-        <SettingsRow label="歌词显示" description="自动显示歌词">
-          <ToggleSwitch checked={true} onChange={() => {}} />
-        </SettingsRow>
-      </SettingsGroup>
-
-      {/* Downloads */}
-      <SettingsGroup title="下载">
-        <SettingsRow label="下载目录">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="text-caption" style={{ color: 'var(--color-muted-foreground)' }}>
-              D:\Music\biliMusic
-            </span>
-            <button
-              style={{
-                padding: '4px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                color: 'var(--color-foreground)',
-                fontSize: 12,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              更改
-            </button>
-          </div>
-        </SettingsRow>
-        <SettingsRow label="下载音质">
-          <select
-            style={{
-              padding: '8px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              fontSize: 'var(--text-caption)',
-              color: 'var(--color-foreground)',
-              fontFamily: 'var(--font-body)',
-              cursor: 'pointer',
-              width: 120,
-            }}
-          >
-            <option>高品质</option>
-            <option>标准</option>
-            <option>无损</option>
-          </select>
-        </SettingsRow>
-      </SettingsGroup>
-
-      {/* Account */}
-      <SettingsGroup title="账号">
-        <SettingsRow label="BiliBili 账号">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isLoggedIn && avatar && (
-              <img
-                src={avatar}
-                alt=""
-                style={{ width: 24, height: 24, borderRadius: 'var(--radius-full)' }}
-              />
-            )}
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 12,
-                color: isLoggedIn ? 'var(--color-primary)' : 'var(--color-muted)',
-              }}
-            >
-              {isLoggedIn ? (
-                <>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#52c41a', display: 'inline-block' }} />
-                  {username}
-                </>
-              ) : (
-                <>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-muted)', display: 'inline-block' }} />
-                  未登录
-                </>
-              )}
-            </span>
-            {isLoggedIn ? (
-              <button
-                onClick={logout}
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'transparent',
-                  border: '1px solid var(--color-destructive)',
-                  color: 'var(--color-destructive)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-body)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'background var(--duration-fast)',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-destructive)'; e.currentTarget.style.color = '#fff' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-destructive)' }}
-              >
-                <LogOut size={12} />
-                退出登录
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowLogin(true)}
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--color-primary)',
-                  color: 'var(--color-on-primary)',
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-body)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  transition: 'background var(--duration-fast)',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-primary-hover)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-primary)' }}
-              >
-                <LogIn size={12} />
-                扫码登录
-              </button>
-            )}
-          </div>
-        </SettingsRow>
-      </SettingsGroup>
-
-      {/* About */}
-      <SettingsGroup title="关于">
-        <SettingsRow label="版本">
-          <span className="text-caption" style={{ color: 'var(--color-muted)' }}>
-            biliMusic v1.0.0
-          </span>
-        </SettingsRow>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            style={{
-              padding: '4px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              color: 'var(--color-foreground)',
-              fontSize: 12,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            检查更新
-          </button>
-          <button
-            style={{
-              padding: '4px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
-              color: 'var(--color-foreground)',
-              fontSize: 12,
-              cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            开源许可
-          </button>
-        </div>
-      </SettingsGroup>
-    </div>
-  )
-}
-
-function SettingsGroup({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      className="glass-panel"
-      style={{ padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}
-    >
-      <span className="text-overline" style={{ color: 'var(--color-muted)' }}>
-        {title}
-      </span>
-      {children}
-    </div>
-  )
-}
-
-function SettingsRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: description ? 'flex-start' : 'center',
-        justifyContent: 'space-between',
-        gap: 'var(--space-lg)',
-      }}
-    >
-      <div>
-        <div className="text-body">{label}</div>
-        {description && (
-          <div className="text-caption" style={{ color: 'var(--color-muted)', marginTop: 2 }}>
-            {description}
-          </div>
+    <MusicPageShell>
+      <MusicHero
+        eyebrow="Preferences"
+        title="设置"
+        subtitle="整理外观、播放、下载和账号，让每一次打开都保持熟悉的节奏。"
+        tone="red"
+        action={(
+          isLoggedIn ? (
+            <ActionButton tone="subtle" onClick={logout}>
+              <LogOut size={16} />
+              退出登录
+            </ActionButton>
+          ) : (
+            <ActionButton onClick={() => setShowLogin(true)}>
+              <LogIn size={16} />
+              扫码登录
+            </ActionButton>
+          )
         )}
+      />
+
+      <div className="settings-grid">
+        <div className="settings-column">
+          <SettingsGroup title="外观" icon={<Palette size={20} />}>
+            <SettingsRow label="主题模式">
+              <SegmentedControl
+                options={[
+                  { value: 'light' as ThemeMode, label: '浅色', icon: <Sun size={14} /> },
+                  { value: 'dark' as ThemeMode, label: '深色', icon: <Moon size={14} /> },
+                  { value: 'system' as ThemeMode, label: '系统', icon: <Monitor size={14} /> },
+                ]}
+                value={mode}
+                onChange={setMode}
+              />
+            </SettingsRow>
+            <SettingsRow label="侧边栏">
+              <SegmentedControl
+                options={[
+                  { value: 'expanded' as SidebarState, label: '展开' },
+                  { value: 'collapsed' as SidebarState, label: '折叠' },
+                  { value: 'auto' as SidebarState, label: '自动' },
+                ]}
+                value={settings.sidebarState}
+                onChange={(sidebarState) => setAppSettings({ sidebarState })}
+              />
+            </SettingsRow>
+          </SettingsGroup>
+
+          <SettingsGroup title="播放" icon={<Music2 size={20} />}>
+            <SettingsRow label="音质">
+              <StyledSelect
+                value={settings.playQuality}
+                onChange={(playQuality) => setAppSettings({ playQuality: playQuality as AppSettings['playQuality'] })}
+                options={['标准', '高品质', '无损']}
+              />
+            </SettingsRow>
+            <SettingsRow label="自动播放" description="播放结束时自动播放推荐">
+              <ToggleSwitch checked={settings.autoPlay} onChange={() => setAppSettings({ autoPlay: !settings.autoPlay })} />
+            </SettingsRow>
+            <SettingsRow label="歌词显示" description="播放页自动显示歌词">
+              <ToggleSwitch checked={settings.showLyrics} onChange={() => setAppSettings({ showLyrics: !settings.showLyrics })} />
+            </SettingsRow>
+          </SettingsGroup>
+        </div>
+
+        <div className="settings-column">
+          <SettingsGroup title="下载" icon={<Download size={20} />}>
+            <SettingsRow label="下载目录">
+              <div className="settings-path">
+                <span>{settings.downloadDir}</span>
+                <button type="button" onClick={changeDownloadDir}>
+                  <FolderOpen size={14} />
+                  更改
+                </button>
+              </div>
+            </SettingsRow>
+            <SettingsRow label="下载音质">
+              <StyledSelect
+                value={settings.downloadQuality}
+                onChange={(downloadQuality) => setAppSettings({ downloadQuality: downloadQuality as AppSettings['downloadQuality'] })}
+                options={['标准', '高品质', '无损']}
+              />
+            </SettingsRow>
+          </SettingsGroup>
+
+          <SettingsGroup title="歌单数据" icon={<FileDown size={20} />}>
+            <div className="settings-actions settings-actions--stacked">
+              <button type="button" onClick={exportPlaylists}>
+                <FileDown size={14} />
+                导出歌单
+              </button>
+              <button type="button" onClick={() => importInputRef.current?.click()}>
+                <FileUp size={14} />
+                导入歌单
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={(e) => importPlaylists(e.target.files?.[0])}
+              />
+              {playlistTransferMessage && <span>{playlistTransferMessage}</span>}
+            </div>
+          </SettingsGroup>
+
+          <SettingsGroup title="账号" icon={<UserRound size={20} />}>
+            <div className="settings-account">
+              <div className="settings-account__avatar">
+                {isLoggedIn && avatar ? <img src={avatar} alt="" /> : <UserRound size={22} />}
+              </div>
+              <div className="settings-account__body">
+                <span className={isLoggedIn ? 'is-online' : ''}>{isLoggedIn ? '已登录' : '未登录'}</span>
+                <strong>{isLoggedIn ? username : 'BiliBili 账号'}</strong>
+              </div>
+              <button type="button" onClick={isLoggedIn ? logout : () => setShowLogin(true)}>
+                {isLoggedIn ? <LogOut size={14} /> : <LogIn size={14} />}
+                {isLoggedIn ? '退出' : '登录'}
+              </button>
+            </div>
+          </SettingsGroup>
+
+          <SettingsGroup title="关于" icon={<Info size={20} />}>
+            <SettingsRow label="版本">
+              <span className="settings-version">biliMusic v1.0.0</span>
+            </SettingsRow>
+            <div className="settings-actions">
+              <button type="button" onClick={() => setAboutMessage('当前已是最新版本')}>
+                <SettingsIcon size={14} />
+                检查更新
+              </button>
+              <button type="button" onClick={() => setAboutMessage('开源许可信息会随安装包一并发布')}>
+                开源许可
+              </button>
+              {aboutMessage && <span>{aboutMessage}</span>}
+            </div>
+          </SettingsGroup>
+        </div>
       </div>
-      <div style={{ flexShrink: 0 }}>{children}</div>
+    </MusicPageShell>
+  )
+}
+
+function SettingsGroup({
+  title,
+  icon,
+  children,
+}: {
+  title: string
+  icon: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <MusicSection title={title} icon={icon}>
+      <div className="settings-panel">{children}</div>
+    </MusicSection>
+  )
+}
+
+function SettingsRow({
+  label,
+  description,
+  children,
+}: {
+  label: string
+  description?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="settings-row">
+      <div className="settings-row__text">
+        <strong>{label}</strong>
+        {description && <span>{description}</span>}
+      </div>
+      <div className="settings-row__control">{children}</div>
     </div>
   )
 }
 
-function RadioGroup<T extends string>({
+function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
 }: {
-  options: { value: T; label: string; icon?: React.ReactNode }[]
+  options: { value: T; label: string; icon?: ReactNode }[]
   value: T
   onChange: (v: T) => void
 }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        borderRadius: 'var(--radius-full)',
-        border: '1px solid var(--color-border)',
-        background: 'var(--color-card)',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="settings-segment">
       {options.map((opt) => (
         <button
           key={opt.value}
+          type="button"
+          className={value === opt.value ? 'is-active' : ''}
           onClick={() => onChange(opt.value)}
-          style={{
-            padding: '6px 14px',
-            border: 'none',
-            background: value === opt.value ? 'var(--color-primary)' : 'transparent',
-            color: value === opt.value ? 'var(--color-on-primary)' : 'var(--color-foreground)',
-            fontSize: 'var(--text-caption)',
-            fontWeight: value === opt.value ? 600 : 400,
-            cursor: 'pointer',
-            fontFamily: 'var(--font-body)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            transition: 'all var(--duration-fast) var(--easing-default)',
-          }}
         >
           {opt.icon}
           {opt.label}
@@ -319,33 +265,32 @@ function RadioGroup<T extends string>({
   )
 }
 
+function StyledSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string
+  onChange: (value: string) => void
+  options: string[]
+}) {
+  return (
+    <select className="settings-select" value={value} onChange={(e) => onChange(e.target.value)}>
+      {options.map(option => <option key={option}>{option}</option>)}
+    </select>
+  )
+}
+
 function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <button
+      type="button"
+      className={`settings-toggle ${checked ? 'is-on' : ''}`}
+      role="switch"
+      aria-checked={checked}
       onClick={onChange}
-      style={{
-        width: 44,
-        height: 24,
-        borderRadius: 'var(--radius-full)',
-        background: checked ? 'var(--color-primary)' : 'var(--color-border)',
-        border: 'none',
-        cursor: 'pointer',
-        position: 'relative',
-        transition: 'background var(--duration-normal) var(--easing-default)',
-      }}
     >
-      <div
-        style={{
-          width: 20,
-          height: 20,
-          borderRadius: 'var(--radius-full)',
-          background: checked ? '#fff' : 'var(--color-muted)',
-          position: 'absolute',
-          top: 2,
-          left: checked ? 22 : 2,
-          transition: 'left var(--duration-normal) var(--easing-default), background var(--duration-normal)',
-        }}
-      />
+      <span />
     </button>
   )
 }

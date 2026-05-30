@@ -136,6 +136,7 @@ export function TrackListRow({
   isCurrent,
   isPlaying,
   onPlay,
+  leading,
   extra,
 }: {
   track: Track
@@ -143,6 +144,7 @@ export function TrackListRow({
   isCurrent?: boolean
   isPlaying?: boolean
   onPlay: () => void
+  leading?: React.ReactNode
   extra?: React.ReactNode
 }) {
   return (
@@ -158,6 +160,7 @@ export function TrackListRow({
           {isCurrent && isPlaying ? <Equalizer /> : index}
         </span>
       )}
+      {leading && <div className="am-track-row__leading">{leading}</div>}
       <div className="am-track-row__cover">
         {track.coverUrl ? <img src={track.coverUrl} alt="" loading="lazy" /> : <CoverFallback />}
         <span><Play size={16} fill="currentColor" /></span>

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Heart, Play, X } from 'lucide-react'
 import { usePlayer } from '@/contexts/PlayerContext'
+import AddToPlaylistButton from '@/components/AddToPlaylistButton'
 import { loadFavoriteTracks, saveFavoriteTracks } from '@/utils/storage'
 import {
   ActionButton,
@@ -60,9 +61,12 @@ export default function Favorites() {
                 isPlaying={player.isPlaying}
                 onPlay={() => player.playNow(track)}
                 extra={(
-                  <button className="am-icon-danger" onClick={(e) => { e.stopPropagation(); handleRemove(track.id) }} title="取消收藏">
-                    <X size={16} />
-                  </button>
+                  <div className="am-extra-actions">
+                    <AddToPlaylistButton track={track} size={15} />
+                    <button className="am-icon-danger" onClick={(e) => { e.stopPropagation(); handleRemove(track.id) }} title="取消收藏">
+                      <X size={16} />
+                    </button>
+                  </div>
                 )}
               />
             ))}
