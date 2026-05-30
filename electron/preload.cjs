@@ -80,6 +80,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('tray:player-command', listener)
     return () => ipcRenderer.removeListener('tray:player-command', listener)
   },
+  openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
   platform: 'win32',
   biliApi,
   lyricsApi,

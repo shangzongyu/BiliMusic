@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, ipcMain, nativeImage, screen, session } from 'electron'
+import { app, BrowserWindow, Tray, ipcMain, nativeImage, screen, session, shell } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { registerBiliApiHandlers } from './biliApi'
@@ -493,6 +493,10 @@ ipcMain.on('tray:player-state', (_event, state: TrayPlayerState) => {
 })
 ipcMain.on('tray:command', (_event, command: TrayCommand) => sendTrayCommand(command))
 ipcMain.handle('tray:get-state', () => trayPlayerState)
+// 用系统默认浏览器打开外部链接（仅放行 http/https，避免任意协议执行）
+ipcMain.handle('shell:open-external', (_event, url: string) => {
+  if (typeof url === 'string' && /^https?:\/\//i.test(url)) return shell.openExternal(url)
+})
 
 app.whenReady().then(() => {
   setupBiliHeaders()

@@ -4,6 +4,7 @@ import {
   FileUp,
   Download,
   FolderOpen,
+  Github,
   Info,
   LogIn,
   LogOut,
@@ -191,8 +192,9 @@ export default function Settings() {
                 <SettingsIcon size={14} />
                 检查更新
               </button>
-              <button type="button" onClick={() => setAboutMessage('开源许可信息会随安装包一并发布')}>
-                开源许可
+              <button type="button" onClick={() => window.electronAPI?.openExternal?.('https://github.com/HanversionOvO/BiliMusic')}>
+                <Github size={14} />
+                关于项目
               </button>
               {aboutMessage && <span>{aboutMessage}</span>}
             </div>

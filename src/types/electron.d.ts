@@ -90,6 +90,7 @@ declare global {
       onFullscreenChange?: (callback: (isFullscreen: boolean) => void) => () => void
       updateTrayPlayerState?: (state: TrayPlayerState) => void
       onTrayPlayerCommand?: (callback: (command: TrayPlayerCommand) => void) => () => void
+      openExternal: (url: string) => Promise<void>
       platform: string
       biliApi: BiliApi
       lyricsApi: LyricsApi
