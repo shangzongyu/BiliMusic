@@ -6,6 +6,7 @@ dist
 dist-electron
 release
 node_modules
+platform
 
 dev.log
 package-lock.json

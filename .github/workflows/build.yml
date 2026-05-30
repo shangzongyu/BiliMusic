@@ -1,0 +1,73 @@
+name: Build Multi-Platform
+
+# 三平台 × 多架构打包。项目无原生模块（依赖全部打进 bundle），故每个 OS 的 runner
+# 可交叉构建本平台的各架构。macOS 的 dmg 只能在 macOS 上打，因此仍按 OS 分 runner。
+# 触发：推送 v* tag，或在 Actions 页面手动运行（workflow_dispatch）。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows：x64 / x86(ia32) / arm64
+          - os: windows-latest
+            arch: x64
+          - os: windows-latest
+            arch: ia32
+          - os: windows-latest
+            arch: arm64
+          # macOS：Intel(x64) / Apple Silicon(arm64)
+          - os: macos-latest
+            arch: x64
+          - os: macos-latest
+            arch: arm64
+          # Linux：x64 / arm64
+          - os: ubuntu-latest
+            arch: x64
+          - os: ubuntu-latest
+            arch: arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer & main process
+        run: npm run build
+
+      - name: Package (${{ matrix.arch }})
+        # --${{ matrix.arch }} 指定目标架构（ia32 即 32 位 x86）；当前 OS 自动推断
+        run: npx electron-builder --${{ matrix.arch }} --publish never
+        env:
+          # CI 无签名证书：跳过 macOS 自动签名，产出未签名包
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: BiliMusic-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: ignore
+          retention-days: 14

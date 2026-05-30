@@ -64,7 +64,24 @@
       "runAfterFinish": true,
       "deleteAppDataOnUninstall": false,
       "uninstallDisplayName": "BiliMusic ${version}",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "electron/icon.png",
+      "category": "public.app-category.music",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "${productName} ${version}"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "electron/icon.png",
+      "category": "AudioVideo",
+      "maintainer": "Hanversion <hanversion@gmail.com>",
+      "synopsis": "基于 Bilibili 的桌面音乐播放器",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     }
   }
 }
