@@ -82,6 +82,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('tray:player-command', listener)
   },
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
+  getAppVersion: () => ipcRenderer.invoke('app:get-version'),
+  checkForUpdate: () => ipcRenderer.invoke('updater:check'),
+  quitAndInstall: () => ipcRenderer.send('updater:quit-and-install'),
+  applyRendererUpdate: () => ipcRenderer.send('updater:apply-now'),
+  notifyRendererReady: () => ipcRenderer.send('updater:renderer-ready'),
+  onUpdaterEvent: (callback) => {
+    const listener = (_event, payload) => callback(payload)
+    ipcRenderer.on('updater:event', listener)
+    return () => ipcRenderer.removeListener('updater:event', listener)
+  },
   platform: process.platform,
   biliApi,
   lyricsApi,

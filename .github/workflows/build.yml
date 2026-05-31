@@ -1,8 +1,10 @@
 name: Build Multi-Platform
 
-# 三平台 × 多架构打包。项目无原生模块（依赖全部打进 bundle），故每个 OS 的 runner
-# 可交叉构建本平台的各架构。macOS 的 dmg 只能在 macOS 上打，因此仍按 OS 分 runner。
-# 触发：推送 v* tag，或在 Actions 页面手动运行（workflow_dispatch）。
+# 三平台 × 多架构打包 + 自动更新元数据发布。
+# 每个 OS 一个 job，单次 electron-builder 调用构建该 OS 全部架构 —— 这样每个 OS 只产出
+# 一个含多架构 files 数组的 latest*.yml（electron-updater 按运行架构自选），避免多 job 覆盖。
+# Linux job 额外产出平台无关的 OTA 渲染包（renderer-<v>.asar + ota.json）供渲染热补丁下发。
+# 触发：推送 v* tag，或手动运行（workflow_dispatch，仅构建产物、不发布）。
 on:
   push:
     tags:
@@ -14,29 +16,18 @@ permissions:
 
 jobs:
   build:
-    name: ${{ matrix.os }} (${{ matrix.arch }})
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Windows：x64 / x86(ia32) / arm64
           - os: windows-latest
-            arch: x64
-          - os: windows-latest
-            arch: ia32
-          - os: windows-latest
-            arch: arm64
-          # macOS：Intel(x64) / Apple Silicon(arm64)
+            args: --win --x64 --ia32 --arm64
           - os: macos-latest
-            arch: x64
-          - os: macos-latest
-            arch: arm64
-          # Linux：x64 / arm64
+            args: --mac --x64 --arm64
           - os: ubuntu-latest
-            arch: x64
-          - os: ubuntu-latest
-            arch: arm64
+            args: --linux --x64 --arm64
 
     steps:
       - name: Checkout
@@ -54,24 +45,31 @@ jobs:
       - name: Build renderer & main process
         run: npm run build
 
-      - name: Package (${{ matrix.arch }})
-        # --${{ matrix.arch }} 指定目标架构（ia32 即 32 位 x86）；当前 OS 自动推断
-        run: npx electron-builder --${{ matrix.arch }} --publish never
+      - name: Package (生成各架构安装包 + latest*.yml + blockmap)
+        # --publish never 不上传，但仍生成 latest*.yml 与 blockmap，由 release job 统一发布
+        run: npx electron-builder ${{ matrix.args }} --publish never
         env:
           # CI 无签名证书：跳过 macOS 自动签名，产出未签名包
           CSC_IDENTITY_AUTO_DISCOVERY: false
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build OTA renderer bundle (Linux only, 平台无关只产一次)
+        if: matrix.os == 'ubuntu-latest'
+        run: node scripts/build-ota.mjs
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: BiliMusic-${{ matrix.os }}-${{ matrix.arch }}
+          name: dist-${{ matrix.os }}
           path: |
             release/*.exe
             release/*.dmg
             release/*.zip
             release/*.AppImage
             release/*.deb
+            release/*.yml
+            release/*.blockmap
+            release/ota/ota.json
+            release/ota/renderer-*.asar
           if-no-files-found: ignore
           retention-days: 14
 
@@ -88,11 +86,12 @@ jobs:
           merge-multiple: true
 
       - name: Publish release assets
+        # latest*.yml + 安装包 + blockmap + ota.json + renderer-<v>.asar 一并发布；
+        # 发布为正式 release（非 draft），electron-updater 与 OTA manifest 方能从 latest 拉取
         uses: softprops/action-gh-release@v2
         with:
           name: BiliMusic ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
-          files: |
-            release-assets/**
+          files: release-assets/**

@@ -3,6 +3,7 @@ import path from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { registerBiliApiHandlers } from './biliApi'
 import { registerLyricsApiHandlers } from './lyricsApi'
+import { initUpdates, getActiveRendererRoot } from './updater'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -573,13 +574,22 @@ app.whenReady().then(() => {
   if (!process.env.VITE_DEV_SERVER_URL) {
     protocol.handle('app', (request) => {
       const { pathname } = new URL(request.url)
-      const filePath = path.join(__dirname, '../dist', decodeURIComponent(pathname))
+      // 渲染层根目录可能是包内 dist 或已生效的 OTA asar（net.fetch 透明读 asar 内部）
+      const filePath = path.join(getActiveRendererRoot(), decodeURIComponent(pathname))
       return net.fetch(pathToFileURL(filePath).toString())
     })
   }
   setupBiliHeaders()
   registerBiliApiHandlers()
   registerLyricsApiHandlers()
+  // 更新模块须在创建窗口前初始化：bootReconcile 先定下生效的渲染层根目录，供 app:// 加载
+  initUpdates({
+    window: () => mainWindow,
+    bundledRendererRoot: path.join(__dirname, '../dist'),
+    reload: () => {
+      mainWindow?.loadURL('app://local/index.html')
+    },
+  })
   if (isHarmonyOS) {
     // OpenHarmony 上窗口显示/隐藏与托盘强相关，需先创建托盘再创建主窗口。
     createTray()

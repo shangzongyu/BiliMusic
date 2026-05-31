@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   FileDown,
   FileUp,
@@ -12,6 +12,7 @@ import {
   Moon,
   Music2,
   Palette,
+  RefreshCw,
   Settings as SettingsIcon,
   Sun,
   UserRound,
@@ -29,7 +30,49 @@ export default function Settings() {
   const { isLoggedIn, username, avatar, logout, setShowLogin } = useAuth()
   const importInputRef = useRef<HTMLInputElement | null>(null)
   const [playlistTransferMessage, setPlaylistTransferMessage] = useState('')
-  const [aboutMessage, setAboutMessage] = useState('')
+  const [appVersion, setAppVersion] = useState('1.0.0')
+  const [updateStatus, setUpdateStatus] = useState('')
+  const [updateAction, setUpdateAction] = useState<'restart' | 'reload' | null>(null)
+
+  useEffect(() => {
+    window.electronAPI?.getAppVersion?.()?.then((v) => {
+      if (v) setAppVersion(v)
+    })
+    return window.electronAPI?.onUpdaterEvent?.((event) => {
+      switch (event.type) {
+        case 'checking':
+          setUpdateStatus('正在检查更新…'); setUpdateAction(null); break
+        case 'up-to-date':
+          setUpdateStatus(`已是最新版本（v${event.version}）`); setUpdateAction(null); break
+        case 'available':
+          setUpdateStatus(`发现新版本 v${event.version}，正在下载…`); setUpdateAction(null); break
+        case 'progress':
+          setUpdateStatus(`正在下载更新… ${event.percent}%`); break
+        case 'downloaded':
+          setUpdateStatus(`新版本 v${event.version} 已下载`); setUpdateAction('restart'); break
+        case 'manual':
+          setUpdateStatus('已打开下载页，请手动下载最新版本'); setUpdateAction(null); break
+        case 'renderer-available':
+          setUpdateStatus(`发现界面更新 v${event.version}，正在下载…`); setUpdateAction(null); break
+        case 'renderer-progress':
+          setUpdateStatus(`正在下载界面更新… ${event.percent}%`); break
+        case 'renderer-ready-to-apply':
+          setUpdateStatus(`界面更新 v${event.version} 已就绪`); setUpdateAction('reload'); break
+        case 'error':
+          setUpdateStatus(`检查更新失败：${event.message}`); setUpdateAction(null); break
+      }
+    })
+  }, [])
+
+  const checkUpdate = () => {
+    setUpdateStatus('正在检查更新…')
+    setUpdateAction(null)
+    window.electronAPI?.checkForUpdate?.()
+  }
+  const runUpdateAction = () => {
+    if (updateAction === 'restart') window.electronAPI?.quitAndInstall?.()
+    else if (updateAction === 'reload') window.electronAPI?.applyRendererUpdate?.()
+  }
 
   const changeDownloadDir = () => {
     const next = window.prompt('请输入下载目录', settings.downloadDir)
@@ -185,18 +228,24 @@ export default function Settings() {
 
           <SettingsGroup title="关于" icon={<Info size={20} />}>
             <SettingsRow label="版本">
-              <span className="settings-version">BiliMusic v1.0.0</span>
+              <span className="settings-version">BiliMusic v{appVersion}</span>
             </SettingsRow>
             <div className="settings-actions">
-              <button type="button" onClick={() => setAboutMessage('当前已是最新版本')}>
+              <button type="button" onClick={checkUpdate}>
                 <SettingsIcon size={14} />
                 检查更新
               </button>
+              {updateAction && (
+                <button type="button" onClick={runUpdateAction}>
+                  <RefreshCw size={14} />
+                  {updateAction === 'restart' ? '重启并安装' : '立即重载'}
+                </button>
+              )}
               <button type="button" onClick={() => window.electronAPI?.openExternal?.('https://github.com/HanversionOvO/BiliMusic')}>
                 <Github size={14} />
                 关于项目
               </button>
-              {aboutMessage && <span>{aboutMessage}</span>}
+              {updateStatus && <span>{updateStatus}</span>}
             </div>
           </SettingsGroup>
         </div>

@@ -78,6 +78,19 @@ export interface TrayPlayerState {
 
 export type TrayPlayerCommand = 'toggle-play' | 'next' | 'prev'
 
+// 统一更新事件（整包 electron-updater + 渲染热补丁共用此通道）
+export type UpdaterEvent =
+  | { type: 'checking' }
+  | { type: 'up-to-date'; version: string }
+  | { type: 'available'; version: string; notes?: string }
+  | { type: 'progress'; percent: number }
+  | { type: 'downloaded'; version: string }
+  | { type: 'manual'; url: string }
+  | { type: 'renderer-available'; version: string }
+  | { type: 'renderer-progress'; percent: number }
+  | { type: 'renderer-ready-to-apply'; version: string }
+  | { type: 'error'; message: string }
+
 declare global {
   interface Window {
     electronAPI: {
@@ -93,6 +106,12 @@ declare global {
       updateTrayPlayerState?: (state: TrayPlayerState) => void
       onTrayPlayerCommand?: (callback: (command: TrayPlayerCommand) => void) => () => void
       openExternal: (url: string) => Promise<void>
+      getAppVersion?: () => Promise<string>
+      checkForUpdate?: () => Promise<void>
+      quitAndInstall?: () => void
+      applyRendererUpdate?: () => void
+      notifyRendererReady?: () => void
+      onUpdaterEvent?: (callback: (event: UpdaterEvent) => void) => () => void
       platform: string
       biliApi: BiliApi
       lyricsApi: LyricsApi

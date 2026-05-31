@@ -2,7 +2,17 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import electron from 'vite-plugin-electron'
+import { builtinModules } from 'module'
 import path from 'path'
+
+// 主进程需外部化的运行时依赖：含动态 require / 读取自身资源，不能被 esbuild 打进 main.js，
+// 由 electron-builder 以生产依赖纳入包内。
+const electronExternals = [
+  'electron',
+  'electron-updater',
+  ...builtinModules,
+  ...builtinModules.map((m) => `node:${m}`),
+]
 
 export default defineConfig({
   plugins: [
@@ -11,6 +21,13 @@ export default defineConfig({
     electron([
       {
         entry: 'electron/main.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              external: electronExternals,
+            },
+          },
+        },
       },
     ]),
   ],

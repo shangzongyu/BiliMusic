@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { PlayerProvider } from '@/contexts/PlayerContext'
 import { NowPlayingProvider } from '@/contexts/NowPlayingContext'
@@ -29,6 +30,11 @@ function GlobalLoginDialog() {
 }
 
 export default function App() {
+  // 渲染层成功挂载后回报主进程：确认当前（可能是 OTA 热补丁的）渲染包可用，避免下次启动误回滚
+  useEffect(() => {
+    window.electronAPI?.notifyRendererReady?.()
+  }, [])
+
   return (
     <AuthProvider>
       <PlayerProvider>
