@@ -129,6 +129,9 @@ export default function PlayerBar() {
                   transition={{ type: 'spring', stiffness: 300, damping: 32 }}
                   src={player.currentTrack.coverUrl}
                   alt={player.currentTrack.title}
+                  loading="eager"
+                  decoding="sync"
+                  draggable={false}
                   whileHover={{ scale: 1.07 }}
                   style={{
                     width: '100%',

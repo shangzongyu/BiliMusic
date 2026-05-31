@@ -185,12 +185,14 @@ export default function NowPlaying() {
                   transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.img
-                  key={track.id}
                   layoutId="np-cover"
                   className="now-playing-cover"
                   src={track.coverUrl}
                   alt={track.title}
-                  initial={{ opacity: 0, scale: 0.96, rotateX: 4 }}
+                  loading="eager"
+                  decoding="sync"
+                  draggable={false}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1, rotateX: 0 }}
                   transition={spring}
                 />
