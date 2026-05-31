@@ -106,15 +106,13 @@ export default function PlayQueue({ open, onClose }: { open: boolean; onClose: (
               display: 'flex',
               flexDirection: 'column',
               borderRadius: 18,
-              background:
-                'linear-gradient(180deg, rgba(43, 43, 48, 0.92) 0%, rgba(18, 18, 21, 0.94) 46%, rgba(10, 10, 12, 0.96) 100%)',
+              background: 'var(--queue-bg)',
               backdropFilter: 'blur(34px) saturate(175%)',
               WebkitBackdropFilter: 'blur(34px) saturate(175%)',
-              border: '1px solid rgba(255, 255, 255, 0.14)',
-              boxShadow:
-                '0 30px 80px rgba(0, 0, 0, 0.52), inset 0 1px rgba(255, 255, 255, 0.14), inset 0 -1px rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--queue-border)',
+              boxShadow: 'var(--queue-shadow)',
               overflow: 'hidden',
-              color: '#fff',
+              color: 'var(--queue-text)',
               fontFamily:
                 "'SF Pro Display', '-apple-system', BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif",
             } as CSSProperties}
@@ -126,18 +124,17 @@ export default function PlayQueue({ open, onClose }: { open: boolean; onClose: (
                 justifyContent: 'space-between',
                 gap: 12,
                 padding: '15px 16px 14px 18px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.11)',
-                background:
-                  'linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.055))',
+                borderBottom: '1px solid var(--queue-divider)',
+                background: 'var(--queue-header-bg)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, minWidth: 0 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: 'rgba(255, 255, 255, 0.95)' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--queue-text)' }}>
                   播放队列
                 </span>
                 <span
                   style={{
-                    color: 'rgba(255, 255, 255, 0.42)',
+                    color: 'var(--queue-text-3)',
                     fontSize: 11,
                     fontWeight: 600,
                     fontVariantNumeric: 'tabular-nums',
@@ -167,7 +164,7 @@ export default function PlayQueue({ open, onClose }: { open: boolean; onClose: (
                 >
                   <Trash2 size={17} />
                 </IconButton>
-                <div style={{ width: 1, height: 16, background: 'rgba(255, 255, 255, 0.1)', margin: '0 3px' }} />
+                <div style={{ width: 1, height: 16, background: 'var(--queue-divider)', margin: '0 3px' }} />
                 <IconButton title="关闭" onClick={onClose}>
                   <X size={19} />
                 </IconButton>
@@ -238,9 +235,8 @@ export default function PlayQueue({ open, onClose }: { open: boolean; onClose: (
                     justifyContent: 'space-between',
                     gap: 12,
                     padding: '11px 18px',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.11)',
-                    background:
-                      'linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.1))',
+                    borderTop: '1px solid var(--queue-divider)',
+                    background: 'var(--queue-footer-bg)',
                     overflow: 'hidden',
                   }}
                 >
@@ -249,7 +245,7 @@ export default function PlayQueue({ open, onClose }: { open: boolean; onClose: (
                   </TextButton>
                   <span
                     style={{
-                      color: 'rgba(255, 255, 255, 0.45)',
+                      color: 'var(--queue-text-3)',
                       fontSize: 12,
                       fontWeight: 600,
                       fontVariantNumeric: 'tabular-nums',
@@ -267,8 +263,8 @@ export default function PlayQueue({ open, onClose }: { open: boolean; onClose: (
                       padding: '0 14px',
                       border: 'none',
                       borderRadius: 999,
-                      background: selected.size === 0 ? 'rgba(255, 255, 255, 0.09)' : '#ff375f',
-                      color: selected.size === 0 ? 'rgba(255, 255, 255, 0.28)' : '#fff',
+                      background: selected.size === 0 ? 'var(--queue-row-active)' : '#ff375f',
+                      color: selected.size === 0 ? 'var(--queue-text-4)' : '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,
@@ -342,7 +338,7 @@ function QueueRow({
       onClick={selecting ? onSelect : onPlay}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      whileHover={{ backgroundColor: selected || isCurrent ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.07)' }}
+      whileHover={{ backgroundColor: selected || isCurrent ? 'var(--queue-row-hover-strong)' : 'var(--queue-row-hover)' }}
       whileTap={{ scale: 0.992 }}
       transition={{ duration: 0.16 }}
       style={{
@@ -353,7 +349,7 @@ function QueueRow({
         minHeight: 58,
         padding: '8px 8px 8px 9px',
         borderRadius: isDragOver ? 7 : 10,
-        background: selected || isCurrent ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+        background: selected || isCurrent ? 'var(--queue-row-active)' : 'transparent',
         borderTop: isDragOver ? '2px solid #ff375f' : '2px solid transparent',
         cursor: 'pointer',
         overflow: 'hidden',
@@ -368,7 +364,7 @@ function QueueRow({
           <motion.span
             animate={{ opacity: hover ? 1 : 0, x: hover ? 0 : -2 }}
             transition={{ duration: 0.16 }}
-            style={{ color: 'rgba(255, 255, 255, 0.34)', display: 'flex', cursor: 'grab' }}
+            style={{ color: 'var(--queue-text-3)', display: 'flex', cursor: 'grab' }}
             title="拖拽调整顺序"
           >
             <GripVertical size={16} />
@@ -381,8 +377,8 @@ function QueueRow({
           width: 42,
           height: 42,
           borderRadius: 8,
-          background: 'rgba(255, 255, 255, 0.1)',
-          border: '1px solid rgba(255, 255, 255, 0.07)',
+          background: 'var(--queue-cover-bg)',
+          border: '1px solid var(--queue-cover-border)',
           overflow: 'hidden',
           flexShrink: 0,
           position: 'relative',
@@ -393,7 +389,7 @@ function QueueRow({
           <img src={track.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Music size={16} style={{ color: 'rgba(255, 255, 255, 0.34)' }} />
+            <Music size={16} style={{ color: 'var(--queue-text-3)' }} />
           </div>
         )}
         <motion.div
@@ -415,7 +411,7 @@ function QueueRow({
       <div style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
         <div
           style={{
-            color: isCurrent ? '#ff4f7a' : 'rgba(255, 255, 255, 0.92)',
+            color: isCurrent ? '#ff4f7a' : 'var(--queue-text)',
             fontSize: 13,
             fontWeight: isCurrent ? 700 : 600,
             lineHeight: 1.25,
@@ -430,7 +426,7 @@ function QueueRow({
         <div
           style={{
             marginTop: 4,
-            color: hover ? 'rgba(255, 255, 255, 0.54)' : 'rgba(255, 255, 255, 0.36)',
+            color: hover ? 'var(--queue-text-2)' : 'var(--queue-text-3)',
             fontSize: 12,
             fontWeight: 500,
             lineHeight: 1.2,
@@ -520,14 +516,14 @@ function SelectionBox({ selected, disabled }: { selected: boolean; disabled: boo
   return (
     <motion.span
       animate={{
-        backgroundColor: selected ? '#ff375f' : disabled ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.02)',
-        borderColor: selected ? '#ff375f' : disabled ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.36)',
+        backgroundColor: selected ? '#ff375f' : 'var(--queue-selbox-bg)',
+        borderColor: selected ? '#ff375f' : 'var(--queue-selbox-border)',
       }}
       style={{
         width: 16,
         height: 16,
         borderRadius: 5,
-        border: '1px solid rgba(255, 255, 255, 0.36)',
+        border: '1px solid var(--queue-selbox-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -549,7 +545,7 @@ function EmptyQueue() {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        color: 'rgba(255, 255, 255, 0.34)',
+        color: 'var(--queue-text-3)',
       }}
     >
       <Music size={38} strokeWidth={1.2} />
@@ -582,8 +578,8 @@ function IconButton({
       title={title}
       disabled={disabled}
       whileHover={disabled ? undefined : {
-        backgroundColor: danger ? 'rgba(255, 69, 58, 0.13)' : 'rgba(255, 255, 255, 0.1)',
-        color: danger ? '#ff6961' : '#fff',
+        backgroundColor: danger ? 'rgba(255, 69, 58, 0.13)' : 'var(--queue-row-hover-strong)',
+        color: danger ? '#ff6961' : 'var(--queue-text)',
       }}
       whileTap={disabled ? undefined : { scale: 0.9 }}
       transition={{ duration: 0.16 }}
@@ -594,7 +590,7 @@ function IconButton({
         borderRadius: 9,
         border: 'none',
         background: active ? 'rgba(255, 55, 95, 0.12)' : 'transparent',
-        color: disabled ? 'rgba(255, 255, 255, 0.2)' : active ? activeColor : 'rgba(255, 255, 255, 0.48)',
+        color: disabled ? 'var(--queue-text-4)' : active ? activeColor : 'var(--queue-icon)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -616,7 +612,7 @@ function TextButton({ children, disabled, onClick }: { children: ReactNode; disa
         padding: 0,
         background: 'none',
         border: 'none',
-        color: disabled ? 'rgba(255, 255, 255, 0.26)' : '#ff4f7a',
+        color: disabled ? 'var(--queue-text-4)' : '#ff4f7a',
         fontSize: 13,
         fontWeight: 700,
         cursor: disabled ? 'not-allowed' : 'pointer',

@@ -505,14 +505,20 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTrack, duration, isMuted, isPlaying, isShuffled, progress, queue, repeatMode, volume])
 
   useEffect(() => {
-    window.electronAPI?.updateTrayPlayerState?.({
+    const pushTrayState = () => window.electronAPI?.updateTrayPlayerState?.({
       hasTrack: Boolean(currentTrack),
       title: currentTrack?.title || '未在播放',
       artist: currentTrack?.artist || '搜索并播放音乐',
       coverUrl: currentTrack?.coverUrl || '',
       isPlaying,
       queueLength: queue.length,
+      theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark',
     })
+    pushTrayState()
+    // 主题切换时重新推送，使托盘面板跟随浅色/深色
+    const observer = new MutationObserver(pushTrayState)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
   }, [currentTrack?.artist, currentTrack?.coverUrl, currentTrack?.id, currentTrack?.title, isPlaying, queue.length])
 
   useEffect(() => {

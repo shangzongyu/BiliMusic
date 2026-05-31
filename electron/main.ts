@@ -92,6 +92,7 @@ interface TrayPlayerState {
   coverUrl: string
   isPlaying: boolean
   queueLength: number
+  theme: 'light' | 'dark'
 }
 
 let trayPlayerState: TrayPlayerState = {
@@ -101,6 +102,7 @@ let trayPlayerState: TrayPlayerState = {
   coverUrl: '',
   isPlaying: false,
   queueLength: 0,
+  theme: 'dark',
 }
 
 // 应用图标：dev 时从 electron 源目录加载，打包后从 dist-electron 同级加载（由 copy 脚本随构建复制）
@@ -138,13 +140,50 @@ function getTrayHtml() {
 <head>
   <meta charset="UTF-8" />
   <style>
+    /* 深色为默认，body.light 切换为浅色，跟随 app 主题 */
+    :root {
+      --tray-menu-bg: linear-gradient(180deg, rgba(38, 38, 42, .94), rgba(18, 18, 20, .96)), rgba(24, 24, 26, .96);
+      --tray-menu-border: rgba(255, 255, 255, .12);
+      --tray-menu-shadow: 0 28px 80px rgba(0, 0, 0, .44), inset 0 1px rgba(255, 255, 255, .12);
+      --tray-text: #f7f7f8;
+      --tray-now-bg: rgba(255, 255, 255, .075);
+      --tray-now-border: rgba(255, 255, 255, .08);
+      --tray-cover-fallback: rgba(255, 255, 255, .62);
+      --tray-meta-sub: rgba(255, 255, 255, .48);
+      --tray-status: rgba(255, 255, 255, .44);
+      --tray-btn-bg: rgba(255, 255, 255, .1);
+      --tray-btn-bg-hover: rgba(255, 255, 255, .16);
+      --tray-btn-text: #fff;
+      --tray-actions-border: rgba(255, 255, 255, .1);
+      --tray-row-text: rgba(255, 255, 255, .82);
+      --tray-row-hover: rgba(255, 255, 255, .1);
+      --tray-count: rgba(255, 255, 255, .38);
+    }
+    body.light {
+      --tray-menu-bg: linear-gradient(180deg, rgba(252, 252, 253, .95), rgba(244, 245, 248, .97)), rgba(255, 255, 255, .96);
+      --tray-menu-border: rgba(24, 25, 28, .1);
+      --tray-menu-shadow: 0 28px 80px rgba(24, 25, 28, .18), inset 0 1px rgba(255, 255, 255, .9);
+      --tray-text: #18191C;
+      --tray-now-bg: rgba(24, 25, 28, .04);
+      --tray-now-border: rgba(24, 25, 28, .07);
+      --tray-cover-fallback: rgba(24, 25, 28, .5);
+      --tray-meta-sub: rgba(24, 25, 28, .5);
+      --tray-status: rgba(24, 25, 28, .5);
+      --tray-btn-bg: rgba(24, 25, 28, .06);
+      --tray-btn-bg-hover: rgba(24, 25, 28, .1);
+      --tray-btn-text: #18191C;
+      --tray-actions-border: rgba(24, 25, 28, .08);
+      --tray-row-text: rgba(24, 25, 28, .82);
+      --tray-row-hover: rgba(24, 25, 28, .06);
+      --tray-count: rgba(24, 25, 28, .4);
+    }
     * { box-sizing: border-box; user-select: none; }
     body {
       width: 330px;
       height: 292px;
       margin: 0;
       overflow: hidden;
-      color: #f7f7f8;
+      color: var(--tray-text);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
       background: transparent;
     }
@@ -153,11 +192,9 @@ function getTrayHtml() {
       height: 100%;
       padding: 14px;
       border-radius: 22px;
-      background:
-        linear-gradient(180deg, rgba(38, 38, 42, .94), rgba(18, 18, 20, .96)),
-        rgba(24, 24, 26, .96);
-      border: 1px solid rgba(255, 255, 255, .12);
-      box-shadow: 0 28px 80px rgba(0, 0, 0, .44), inset 0 1px rgba(255, 255, 255, .12);
+      background: var(--tray-menu-bg);
+      border: 1px solid var(--tray-menu-border);
+      box-shadow: var(--tray-menu-shadow);
       backdrop-filter: blur(30px) saturate(160%);
     }
     .now {
@@ -167,8 +204,8 @@ function getTrayHtml() {
       min-height: 76px;
       padding: 10px;
       border-radius: 16px;
-      background: rgba(255, 255, 255, .075);
-      border: 1px solid rgba(255, 255, 255, .08);
+      background: var(--tray-now-bg);
+      border: 1px solid var(--tray-now-border);
     }
     .cover {
       width: 56px;
@@ -182,17 +219,17 @@ function getTrayHtml() {
       box-shadow: 0 12px 30px rgba(0,0,0,.22);
     }
     .cover img { width: 100%; height: 100%; object-fit: cover; display: none; }
-    .cover span { color: rgba(255,255,255,.62); font-size: 22px; }
+    .cover span { color: var(--tray-cover-fallback); font-size: 22px; }
     .meta { min-width: 0; flex: 1; }
     .meta strong, .meta small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .meta strong { font-size: 14px; line-height: 1.2; font-weight: 760; }
-    .meta small { margin-top: 5px; color: rgba(255,255,255,.48); font-size: 12px; font-weight: 560; }
+    .meta small { margin-top: 5px; color: var(--tray-meta-sub); font-size: 12px; font-weight: 560; }
     .status {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       margin: 12px 2px 10px;
-      color: rgba(255,255,255,.44);
+      color: var(--tray-status);
       font-size: 11px;
       font-weight: 680;
     }
@@ -215,24 +252,26 @@ function getTrayHtml() {
       height: 42px;
       border: 0;
       border-radius: 999px;
-      color: #fff;
-      background: rgba(255,255,255,.1);
+      color: var(--tray-btn-text);
+      background: var(--tray-btn-bg);
       cursor: pointer;
       font: 780 13px/1 system-ui, sans-serif;
       transition: transform .16s ease, background .16s ease, opacity .16s ease;
     }
-    button:hover { background: rgba(255,255,255,.16); transform: translateY(-1px); }
+    button:hover { background: var(--tray-btn-bg-hover); transform: translateY(-1px); }
     button:active { transform: scale(.96); }
     button:disabled { opacity: .42; cursor: default; transform: none; }
     .play {
       background: #ff375f;
+      color: #fff;
       box-shadow: 0 14px 30px rgba(255,55,95,.26);
       font-size: 16px;
     }
+    .play:hover { background: #ff375f; }
     .actions {
       display: grid;
       gap: 8px;
-      border-top: 1px solid rgba(255,255,255,.1);
+      border-top: 1px solid var(--tray-actions-border);
       padding-top: 12px;
     }
     .row {
@@ -244,11 +283,11 @@ function getTrayHtml() {
       text-align: left;
       border-radius: 12px;
       background: transparent;
-      color: rgba(255,255,255,.82);
+      color: var(--tray-row-text);
     }
-    .row:hover { background: rgba(255,255,255,.1); }
+    .row:hover { background: var(--tray-row-hover); }
     .row.danger { color: #ff6961; }
-    .count { color: rgba(255,255,255,.38); font-size: 12px; }
+    .count { color: var(--tray-count); font-size: 12px; }
   </style>
 </head>
 <body>
@@ -274,9 +313,10 @@ function getTrayHtml() {
   <script>
     const { ipcRenderer } = require('electron')
     const $ = (id) => document.getElementById(id)
-    let state = { hasTrack: false, title: '未在播放', artist: '搜索并播放音乐', coverUrl: '', isPlaying: false, queueLength: 0 }
+    let state = { hasTrack: false, title: '未在播放', artist: '搜索并播放音乐', coverUrl: '', isPlaying: false, queueLength: 0, theme: 'dark' }
     function render(next) {
       state = next || state
+      document.body.classList.toggle('light', (state.theme || 'dark') === 'light')
       $('title').textContent = state.title || '未在播放'
       $('artist').textContent = state.artist || '搜索并播放音乐'
       $('status').className = 'status' + (state.isPlaying ? ' is-playing' : '')

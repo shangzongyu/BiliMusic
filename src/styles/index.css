@@ -113,6 +113,49 @@
   --easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* ===== Play Queue Panel (light defaults / dark overrides) ===== */
+:root {
+  --queue-bg: linear-gradient(180deg, rgba(252, 252, 253, 0.95) 0%, rgba(246, 247, 249, 0.96) 46%, rgba(240, 241, 244, 0.97) 100%);
+  --queue-border: rgba(24, 25, 28, 0.1);
+  --queue-shadow: 0 30px 80px rgba(24, 25, 28, 0.18), inset 0 1px rgba(255, 255, 255, 0.9), inset 0 -1px rgba(24, 25, 28, 0.04);
+  --queue-header-bg: linear-gradient(180deg, rgba(24, 25, 28, 0.05), rgba(24, 25, 28, 0.02));
+  --queue-footer-bg: linear-gradient(180deg, rgba(24, 25, 28, 0.03), rgba(24, 25, 28, 0.05));
+  --queue-divider: rgba(24, 25, 28, 0.08);
+  --queue-text: #18191C;
+  --queue-text-2: rgba(24, 25, 28, 0.6);
+  --queue-text-3: rgba(24, 25, 28, 0.45);
+  --queue-text-4: rgba(24, 25, 28, 0.3);
+  --queue-icon: rgba(24, 25, 28, 0.5);
+  --queue-row-hover: rgba(24, 25, 28, 0.05);
+  --queue-row-hover-strong: rgba(24, 25, 28, 0.08);
+  --queue-row-active: rgba(24, 25, 28, 0.06);
+  --queue-cover-bg: rgba(24, 25, 28, 0.06);
+  --queue-cover-border: rgba(24, 25, 28, 0.08);
+  --queue-selbox-bg: rgba(24, 25, 28, 0.03);
+  --queue-selbox-border: rgba(24, 25, 28, 0.3);
+}
+
+[data-theme="dark"] {
+  --queue-bg: linear-gradient(180deg, rgba(43, 43, 48, 0.92) 0%, rgba(18, 18, 21, 0.94) 46%, rgba(10, 10, 12, 0.96) 100%);
+  --queue-border: rgba(255, 255, 255, 0.14);
+  --queue-shadow: 0 30px 80px rgba(0, 0, 0, 0.52), inset 0 1px rgba(255, 255, 255, 0.14), inset 0 -1px rgba(255, 255, 255, 0.05);
+  --queue-header-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.055));
+  --queue-footer-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.1));
+  --queue-divider: rgba(255, 255, 255, 0.11);
+  --queue-text: rgba(255, 255, 255, 0.95);
+  --queue-text-2: rgba(255, 255, 255, 0.54);
+  --queue-text-3: rgba(255, 255, 255, 0.4);
+  --queue-text-4: rgba(255, 255, 255, 0.26);
+  --queue-icon: rgba(255, 255, 255, 0.48);
+  --queue-row-hover: rgba(255, 255, 255, 0.07);
+  --queue-row-hover-strong: rgba(255, 255, 255, 0.12);
+  --queue-row-active: rgba(255, 255, 255, 0.1);
+  --queue-cover-bg: rgba(255, 255, 255, 0.1);
+  --queue-cover-border: rgba(255, 255, 255, 0.07);
+  --queue-selbox-bg: rgba(255, 255, 255, 0.02);
+  --queue-selbox-border: rgba(255, 255, 255, 0.36);
+}
+
 /* ===== Dark Theme ===== */
 
 [data-theme="dark"] {

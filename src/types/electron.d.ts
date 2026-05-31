@@ -73,6 +73,7 @@ export interface TrayPlayerState {
   coverUrl: string
   isPlaying: boolean
   queueLength: number
+  theme: 'light' | 'dark'
 }
 
 export type TrayPlayerCommand = 'toggle-play' | 'next' | 'prev'

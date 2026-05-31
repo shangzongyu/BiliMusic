@@ -10,12 +10,17 @@ function applyTheme(mode: ThemeMode) {
   document.documentElement.setAttribute('data-theme', resolved)
 }
 
+function readStoredMode(): ThemeMode {
+  return (localStorage.getItem('theme-mode') as ThemeMode) || 'system'
+}
+
 // 首次加载时同步设置主题，避免 FOUC
-const initialMode = (localStorage.getItem('theme-mode') as ThemeMode) || 'system'
-applyTheme(initialMode)
+applyTheme(readStoredMode())
 
 export function useTheme() {
-  const [mode, setMode] = useState<ThemeMode>(initialMode)
+  // 惰性读取：每次挂载都从 localStorage 取最新值，
+  // 避免路由切回设置页时用陈旧的模块级初始值导致主题回退为「系统」
+  const [mode, setMode] = useState<ThemeMode>(readStoredMode)
 
   useEffect(() => {
     applyTheme(mode)
