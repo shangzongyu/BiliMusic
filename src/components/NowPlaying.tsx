@@ -396,6 +396,7 @@ export default function NowPlaying() {
                 status={commentsStatus}
                 error={commentsError}
                 total={commentsTotal}
+                coverUrl={track.coverUrl}
                 hasMore={comments.length > 0 && comments.length < commentsTotal}
                 loadingMore={commentsLoadingMore}
                 onClose={() => setCommentsOpen(false)}
@@ -415,6 +416,7 @@ function CommentsPanel({
   status,
   error,
   total,
+  coverUrl,
   hasMore,
   loadingMore,
   onClose,
@@ -425,6 +427,7 @@ function CommentsPanel({
   status: 'idle' | 'loading' | 'ready' | 'error'
   error: string
   total: number
+  coverUrl: string
   hasMore: boolean
   loadingMore: boolean
   onClose: () => void
@@ -434,15 +437,17 @@ function CommentsPanel({
   return (
     <motion.aside
       className="now-playing-comments"
+      style={{ '--comment-cover': coverUrl ? `url(${coverUrl})` : 'none' } as React.CSSProperties}
       initial={{ opacity: 0, x: 42, scale: 0.985 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 42, scale: 0.985 }}
       transition={spring}
     >
+      <div className="now-playing-comments__aura" aria-hidden="true" />
       <div className="now-playing-comments__head">
         <div>
-          <span>评论</span>
-          <small>{total > 0 ? `${formatCount(total)} 条` : 'Bilibili'}</small>
+          <span><MessageCircle size={17} />评论</span>
+          <small>{total > 0 ? `${formatCount(total)} 条互动` : '正在读取 Bilibili 评论'}</small>
         </div>
         <button type="button" onClick={onClose} title="关闭评论">
           <X size={18} />

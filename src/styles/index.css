@@ -2380,26 +2380,71 @@ body {
   top: clamp(74px, 10vh, 108px);
   right: clamp(22px, 5vw, 76px);
   bottom: clamp(28px, 5vh, 58px);
-  width: min(438px, calc(100vw - 44px));
+  width: min(462px, calc(100vw - 44px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 28px;
-  background: rgba(13, 13, 17, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48), inset 0 1px rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(34px) saturate(1.4);
-  -webkit-backdrop-filter: blur(34px) saturate(1.4);
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.035)),
+    rgba(10, 10, 14, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.145);
+  box-shadow:
+    0 34px 92px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 1px rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(38px) saturate(1.55);
+  -webkit-backdrop-filter: blur(38px) saturate(1.55);
+}
+
+.now-playing-comments::before,
+.now-playing-comments::after,
+.now-playing-comments__aura {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.now-playing-comments::before {
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(140deg, rgba(255, 55, 95, 0.14), transparent 38%),
+    radial-gradient(circle at 78% 8%, rgba(255, 255, 255, 0.16), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 22%);
+  opacity: 0.72;
+}
+
+.now-playing-comments::after {
+  inset: 1px;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.045);
+}
+
+.now-playing-comments__aura {
+  inset: -18% -28% auto auto;
+  z-index: 0;
+  width: 78%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-image: var(--comment-cover);
+  background-size: cover;
+  background-position: center;
+  filter: blur(42px) saturate(1.85);
+  opacity: 0.22;
+  transform: rotate(8deg);
 }
 
 .now-playing-comments__head {
+  position: relative;
+  z-index: 2;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 18px 18px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 20px 15px;
 }
 
 .now-playing-comments__head div {
@@ -2408,21 +2453,24 @@ body {
 
 .now-playing-comments__head span,
 .now-playing-comments__head small {
-  display: block;
+  display: flex;
+  align-items: center;
 }
 
 .now-playing-comments__head span {
+  gap: 8px;
   color: rgba(255, 255, 255, 0.98);
-  font-size: 19px;
+  font-size: 20px;
   line-height: 1.15;
-  font-weight: 850;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .now-playing-comments__head small {
-  margin-top: 4px;
-  color: rgba(255, 255, 255, 0.46);
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .now-playing-comments__head button {
@@ -2431,35 +2479,55 @@ body {
   height: 34px;
   display: grid;
   place-items: center;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.075);
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  transition: background var(--duration-fast), color var(--duration-fast), transform var(--duration-fast);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition:
+    background var(--duration-fast),
+    border-color var(--duration-fast),
+    color var(--duration-fast),
+    transform var(--duration-fast);
 }
 
 .now-playing-comments__head button:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
   transform: translateY(-1px);
 }
 
 .now-playing-comments__body {
+  position: relative;
+  z-index: 2;
   flex: 1;
   min-height: 0;
+}
+
+.now-playing-comments__body::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(10, 10, 14, 0.58));
 }
 
 .now-playing-comments__list {
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px;
+  padding: 8px 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: transparent transparent;
 }
 
 .now-playing-comments__list::-webkit-scrollbar {
@@ -2468,36 +2536,67 @@ body {
 
 .now-playing-comments__list::-webkit-scrollbar-thumb {
   border-radius: 999px;
+  background: transparent;
+}
+
+.now-playing-comments__list:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.now-playing-comments__list:hover::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.18);
 }
 
 .now-playing-comment {
+  position: relative;
   display: flex;
   gap: 12px;
-  padding: 12px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  transition: background var(--duration-fast), transform var(--duration-fast), border-color var(--duration-fast);
+  padding: 12px 10px;
+  border-radius: 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    background 180ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.now-playing-comment::after {
+  content: '';
+  position: absolute;
+  left: 60px;
+  right: 10px;
+  bottom: -1px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.075);
 }
 
 .now-playing-comment:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.082);
+  border-color: rgba(255, 255, 255, 0.105);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.07);
+  transform: translateY(-1px) scale(1.006);
+}
+
+.now-playing-comment:hover::after {
+  opacity: 0;
 }
 
 .now-playing-comment img,
 .now-playing-comment__avatar {
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
 }
 
 .now-playing-comment img {
   object-fit: cover;
   background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
 .now-playing-comment__avatar {
@@ -2507,6 +2606,9 @@ body {
   color: #fff;
   font-size: 15px;
   font-weight: 850;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 8px 18px rgba(0, 0, 0, 0.2);
 }
 
 .now-playing-comment__content {
@@ -2526,9 +2628,9 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.88);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 850;
 }
 
 .now-playing-comment__meta span,
@@ -2540,9 +2642,9 @@ body {
 
 .now-playing-comment p {
   margin: 7px 0 0;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.76);
   font-size: 13px;
-  line-height: 1.58;
+  line-height: 1.62;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -2562,17 +2664,25 @@ body {
 
 .now-playing-comments__more {
   min-height: 40px;
-  margin: 4px 0 2px;
+  margin: 10px 4px 2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.09);
   color: rgba(255, 255, 255, 0.86);
   font: 800 13px/1 var(--font-body);
   cursor: pointer;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+  transition: background var(--duration-fast), transform var(--duration-fast), border-color var(--duration-fast);
+}
+
+.now-playing-comments__more:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 .now-playing-comments__more:disabled {
@@ -2604,8 +2714,35 @@ body {
     right: 16px;
     bottom: 16px;
     width: auto;
+    border-radius: 24px;
   }
 
+  .now-playing-comments__head {
+    padding: 17px 17px 12px;
+  }
+
+  .now-playing-comments__list {
+    padding: 6px 9px 13px;
+  }
+
+  .now-playing-comment {
+    padding: 11px 8px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .now-playing-comment,
+  .now-playing-comments__more,
+  .now-playing-comments__head button {
+    transition: none;
+  }
+
+  .now-playing-comment:hover,
+  .now-playing-comments__more:hover:not(:disabled),
+  .now-playing-comments__head button:hover {
+    transform: none;
+  }
 }
 
 /* ===== Apple Music Library Pages ===== */
