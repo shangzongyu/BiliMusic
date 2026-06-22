@@ -10,6 +10,7 @@ const SETTINGS_KEY = 'bilimusic_settings'
 export const PLAYLISTS_CHANGED_EVENT = 'bilimusic:playlists-changed'
 export const FAVORITES_CHANGED_EVENT = 'bilimusic:favorites-changed'
 export const SETTINGS_CHANGED_EVENT = 'bilimusic:settings-changed'
+export const RECENT_CHANGED_EVENT = 'bilimusic:recent-changed'
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   sidebarState: 'auto',
@@ -34,6 +35,7 @@ export function loadRecentTracks(): Track[] {
 export function saveRecentTracks(tracks: Track[]) {
   try {
     localStorage.setItem(RECENT_KEY, JSON.stringify(tracks.slice(0, 50)))
+    window.dispatchEvent(new CustomEvent(RECENT_CHANGED_EVENT))
   } catch { /* ignore */ }
 }
 

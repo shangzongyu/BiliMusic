@@ -286,8 +286,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         if (source.coverUrl) {
           setCurrentTrack(prev => prev ? { ...prev, coverUrl: source.coverUrl } : null)
         }
+        const historyTrack = {
+          ...currentTrack!,
+          coverUrl: source.coverUrl || currentTrack!.coverUrl,
+          duration: source.duration || currentTrack!.duration || 0,
+        }
         // 记录最近播放
-        addRecentTrack({ ...currentTrack!, coverUrl: source.coverUrl || currentTrack!.coverUrl })
+        addRecentTrack(historyTrack)
+        window.electronAPI?.recordPlayHistory?.({
+          id: historyTrack.id,
+          title: historyTrack.title,
+          artist: historyTrack.artist,
+          coverUrl: historyTrack.coverUrl,
+          duration: historyTrack.duration,
+          bvid: historyTrack.bvid,
+        }).catch(() => {})
       } catch {
         if (!cancelled) {
           // 降级：直接用原始信息触发 play（无音频源，标记为不可播放）

@@ -4,6 +4,7 @@ import path from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { registerBiliApiHandlers } from './biliApi'
 import { registerLyricsApiHandlers } from './lyricsApi'
+import { registerPlayHistoryHandlers } from './playHistory'
 import { initUpdates, getActiveRendererRoot } from './updater'
 import { registerWebdavHandlers } from './webdav'
 
@@ -620,6 +621,7 @@ app.whenReady().then(() => {
   setupBiliHeaders()
   registerBiliApiHandlers()
   registerLyricsApiHandlers()
+  registerPlayHistoryHandlers()
   registerWebdavHandlers()
   initUpdates({
     window: () => mainWindow,

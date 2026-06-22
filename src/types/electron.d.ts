@@ -96,6 +96,22 @@ export interface WebdavResult {
   message?: string
 }
 
+export interface PlayHistoryTrackInput {
+  id: string
+  title: string
+  artist: string
+  coverUrl?: string
+  duration?: number
+  bvid?: string
+}
+
+export interface PlayHistoryStats {
+  totalPlays: number
+  totalDuration: number
+  topArtist: { name: string; plays: number } | null
+  topTrack: { id: string; title: string; artist: string; plays: number } | null
+}
+
 // 统一更新事件（整包 electron-updater + 渲染热补丁共用此通道）
 export type UpdaterEvent =
   | { type: 'checking' }
@@ -135,6 +151,9 @@ declare global {
       webdavGet?: (relPath: string) => Promise<WebdavResult>
       webdavPut?: (relPath: string, content: string, etag?: string) => Promise<WebdavResult>
       clearWebdav?: () => Promise<{ ok: boolean }>
+      recordPlayHistory?: (track: PlayHistoryTrackInput) => Promise<{ ok: boolean }>
+      getPlayHistoryStats?: () => Promise<PlayHistoryStats>
+      clearPlayHistory?: () => Promise<{ ok: boolean }>
       platform: string
       biliApi: BiliApi
       lyricsApi: LyricsApi

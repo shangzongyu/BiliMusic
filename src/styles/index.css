@@ -2939,6 +2939,51 @@ body {
   letter-spacing: 0;
 }
 
+.recent-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.recent-stat-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-bg);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.recent-stat-card__icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-foreground);
+}
+
+.recent-stat-card span {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.recent-stat-card strong {
+  color: var(--color-foreground);
+  font-size: 22px;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.recent-stat-card small {
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .am-featured-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
