@@ -9,16 +9,14 @@
     ·
     <a href="#-getting-started">Getting Started</a>
     ·
-    <a href="#-harmonyos-pc">HarmonyOS PC</a>
     ·
-    <a href="https://github.com/HanversionOvO/BiliMusic">GitHub</a>
+    <a href="https://github.com/shangzongyu/BiliMusic">GitHub</a>
   </p>
   <p>
     <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=111" />
     <img alt="Electron" src="https://img.shields.io/badge/Electron-36-47848F?style=for-the-badge&logo=electron&logoColor=fff" />
     <img alt="Vite" src="https://img.shields.io/badge/Vite-6-646CFF?style=for-the-badge&logo=vite&logoColor=fff" />
     <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=fff" />
-    <img alt="HarmonyOS" src="https://img.shields.io/badge/HarmonyOS-PC-D81E06?style=for-the-badge" />
   </p>
 </div>
 
@@ -39,10 +37,6 @@
         <h3>Desktop Player</h3>
         <p>Tray, queue, playlists, lyrics, persisted playback state.</p>
       </td>
-      <td align="center" width="25%">
-        <h3>HarmonyOS PC</h3>
-        <p>Dedicated Electron adaptation for HarmonyOS desktop behavior.</p>
-      </td>
     </tr>
   </table>
 </div>
@@ -53,7 +47,7 @@
   <pre>
 ┌──────────────────────────────────────────────────────────────┐
 │                        BiliMusic                             │
-│  Discover · Search · Queue · Lyrics · Playlists · HarmonyOS   │
+│  Discover · Search · Queue · Lyrics · Playlists               │
 └──────────────────────────────────────────────────────────────┘
   </pre>
 </div>
@@ -67,7 +61,6 @@
 - [Architecture](#-architecture)
 - [Getting Started](#-getting-started)
 - [Desktop Packaging](#-desktop-packaging)
-- [HarmonyOS PC](#-harmonyos-pc)
 - [Project Structure](#-project-structure)
 - [Persistence](#-persistence)
 - [Development Notes](#-development-notes)
@@ -80,7 +73,6 @@ BiliMusic is not just a simple video player wrapped in a desktop shell. Its goal
 
 Video titles are cleaned before lyric search. Search results become music-like track lists. Creator pages can be browsed like artist pages. Queues, favorites, recent tracks, and playlists gradually become a local library. The interface leans toward Apple Music: calm, translucent, animated, and refined, while still staying efficient as a desktop tool.
 
-The project is also a cross-platform experiment. Besides regular Electron desktop packaging, it includes a HarmonyOS PC Electron project under `platform/HarmonyOS` with dedicated adaptations for tray behavior, native title buttons, frameless windows, fullscreen player interactions, and resource packaging.
 
 ## Experience Highlights
 
@@ -112,7 +104,6 @@ The project is also a cross-platform experiment. Besides regular Electron deskto
 - Closing the main window minimizes to tray.
 - Tray state follows current playback.
 - Packaging is configured for Windows, macOS, and Linux.
-- HarmonyOS PC resources can be synced and prepared for HAP builds.
 
 ## Feature Map
 
@@ -233,8 +224,8 @@ BiliMusic aims to be expressive without becoming noisy.
         ┌──────────────────────┴──────────────────────┐
         │                                             │
 ┌───────▼────────┐                          ┌─────────▼─────────┐
-│ Desktop Builds │                          │ HarmonyOS PC HAP   │
-│ Win/macOS/Linux│                          │ platform/HarmonyOS │
+│ Desktop Builds │                          │ OTA Renderer      │
+│ Win/macOS/Linux│                          │ release/ota       │
 └────────────────┘                          └───────────────────┘
 ```
 
@@ -253,13 +244,6 @@ BiliMusic aims to be expressive without becoming noisy.
 - Tray and main-window lifecycle are managed in the main process.
 - `preload.cjs` exposes a limited bridge to the renderer.
 
-### HarmonyOS PC Layer
-
-- `scripts/prepare-harmony.mjs` syncs build outputs into the HarmonyOS project.
-- `scripts/build-harmony.mjs` tries to run Hvigor to build a HAP.
-- `platform/HarmonyOS/web_engine` contains HarmonyOS Electron adaptation code.
-- HarmonyOS-specific behavior is guarded by `process.platform === "openharmony"`.
-
 ## Getting Started
 
 ### Requirements
@@ -267,7 +251,6 @@ BiliMusic aims to be expressive without becoming noisy.
 - Node.js 20 or newer.
 - npm.
 - A matching OS environment for desktop packaging.
-- DevEco Studio and the HarmonyOS Electron environment for HarmonyOS PC builds.
 
 ### Install
 
@@ -311,64 +294,6 @@ Configured targets:
 - macOS: DMG and ZIP.
 - Linux: AppImage and DEB.
 
-## HarmonyOS PC
-
-The HarmonyOS PC Electron project is located at:
-
-```text
-platform/HarmonyOS
-```
-
-### Prepare Resources
-
-```bash
-npm run harmony:prepare
-```
-
-This command:
-
-1. Runs `npm run build`.
-2. Clears the previous HarmonyOS app resource directory.
-3. Copies `dist/`.
-4. Copies `dist-electron/`.
-5. Writes a minimal runtime `package.json`.
-
-Target directory:
-
-```text
-platform/HarmonyOS/web_engine/src/main/resources/resfile/resources/app
-```
-
-### Build HAP
-
-```bash
-npm run harmony:build
-```
-
-If `hvigor` or `hvigorw` is unavailable in your shell, open:
-
-```text
-platform/HarmonyOS
-```
-
-in DevEco Studio and run:
-
-```text
-Build -> Build Hap(s)/APP(s) -> Build Hap(s)
-```
-
-### HarmonyOS-Specific Behavior
-
-| Scenario            | Handling                                                                               |
-| ------------------- | -------------------------------------------------------------------------------------- |
-| Platform check      | `process.platform === "openharmony"`                                                   |
-| Tray icon           | Uses `electron/tray.png`                                                               |
-| Tray context window | Disabled on HarmonyOS to avoid black floating popups                                   |
-| Main window         | Frameless, with HarmonyOS native title buttons enabled by the adapter                  |
-| Player view         | Hides native HarmonyOS title buttons and restores them afterward                       |
-| Fullscreen          | Keeps player state and system fullscreen state in sync                                 |
-| Resources           | AppScope and electron-module icons, splash icons, tray icons, and names are customized |
-
 ## Scripts
 
 | Command                   | Description                              |
@@ -378,8 +303,6 @@ Build -> Build Hap(s)/APP(s) -> Build Hap(s)
 | `npm run preview`         | Preview frontend build                   |
 | `npm run electron:start`  | Build and start Electron                 |
 | `npm run electron:build`  | Package desktop installers               |
-| `npm run harmony:prepare` | Build and sync HarmonyOS resources       |
-| `npm run harmony:build`   | Sync resources and try building HAP      |
 
 ## Project Structure
 
@@ -391,7 +314,7 @@ BiliMusic
 │  ├─ biliApi.ts             Bilibili API proxy
 │  ├─ lyricsApi.ts           Lyrics API proxy
 │  ├─ icon.png               Desktop app icon
-│  └─ tray.png               HarmonyOS tray icon
+│  └─ tray.png               Tray icon
 ├─ src/
 │  ├─ assets/                Frontend assets
 │  ├─ components/            Player, queue, lyrics, layout, shared UI
@@ -402,9 +325,6 @@ BiliMusic
 │  ├─ styles/                Global styles and Apple Music design system
 │  └─ types/                 Electron bridge and domain types
 ├─ scripts/
-│  ├─ prepare-harmony.mjs    Sync HarmonyOS app resources
-│  └─ build-harmony.mjs      Try Hvigor HAP build
-├─ platform/HarmonyOS/       HarmonyOS PC Electron project
 ├─ dist/                     Frontend build output
 ├─ dist-electron/            Electron build output
 └─ release/                  Desktop package output
@@ -470,10 +390,8 @@ Playlist behavior is split across services and UI:
 Window behavior lives mainly in `electron/main.ts`:
 
 - Regular platforms use custom window buttons.
-- HarmonyOS PC uses native title buttons.
 - Closing the window hides it to tray.
 - Production loads the renderer from `app://local/index.html`.
-- The immersive player requests native title buttons to be hidden.
 
 ## Roadmap
 
@@ -483,7 +401,6 @@ Window behavior lives mainly in `electron/main.ts`:
 - [ ] Editable playlist covers.
 - [ ] Listening statistics.
 - [ ] Mini player.
-- [ ] Further HarmonyOS PC behavior refinement.
 - [ ] More complete automated tests.
 
 ## Contributing
@@ -496,14 +413,6 @@ Before submitting changes, at least run:
 npm run build
 ```
 
-If you changed HarmonyOS resources or adapters:
-
-```bash
-npm run harmony:prepare
-```
-
-Then rebuild and verify in DevEco Studio.
-
 ## Disclaimer
 
 BiliMusic is intended for learning, research, and personal use. It is not affiliated with, endorsed by, or commercially connected to Bilibili, Apple Music, Apple Inc., or any related service provider. The project does not bundle audio, video, or lyric resources.
@@ -513,4 +422,3 @@ Please respect platform terms, copyright rules, and local laws. Do not use this 
 ## Author
 
 Designed and built by MikannQAQ.
-

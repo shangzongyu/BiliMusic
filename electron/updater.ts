@@ -9,7 +9,7 @@ import {
   stageRendererUpdate,
 } from './otaUpdater'
 
-const RELEASES_URL = 'https://github.com/HanversionOvO/BiliMusic/releases/latest'
+const RELEASES_URL = 'https://github.com/shangzongyu/BiliMusic/releases/latest'
 const CHECK_INTERVAL = 6 * 60 * 60 * 1000
 const STARTUP_DELAY = 10 * 1000
 
@@ -18,15 +18,14 @@ export { getActiveRendererRoot }
 
 let busy = false
 
-// 整包自动更新依赖系统级安装器与签名：mac 未签名不可用，鸿蒙非 Electron 安装器。
+// 整包自动更新依赖系统级安装器与签名：mac 未签名不可用。
 function canAutoUpdateShell(): boolean {
   if (process.platform === 'darwin') return false
-  if ((process.platform as string) === 'openharmony') return false
   return true
 }
 
-// electron-updater 仅 Win/Linux 用，且为外部依赖（鸿蒙 resfile 无 node_modules）。
-// 动态 import 延迟加载：鸿蒙/mac 永不触发解析，避免 main.js 在鸿蒙上加载失败。
+// electron-updater 仅 Win/Linux 用，且为外部依赖。
+// 动态 import 延迟加载：mac 永不触发解析，避免 main.js 在不支持的环境上加载失败。
 type AutoUpdater = (typeof import('electron-updater'))['autoUpdater']
 let autoUpdaterPromise: Promise<AutoUpdater> | null = null
 
@@ -60,7 +59,7 @@ export async function checkForUpdates(manual: boolean): Promise<void> {
   busy = true
   try {
     if (manual) emitUpdater({ type: 'checking' })
-    // 开发态判据用 dev server 是否存在（比 app.isPackaged 可靠：鸿蒙 .hap 上 isPackaged 可能为 false）
+    // 开发态判据用 dev server 是否存在（比 app.isPackaged 更可靠）
     if (process.env.VITE_DEV_SERVER_URL) {
       if (manual) emitUpdater({ type: 'up-to-date', version: app.getVersion() })
       return
@@ -75,7 +74,7 @@ export async function checkForUpdates(manual: boolean): Promise<void> {
 
     const appV = app.getVersion()
 
-    // 1) 渲染补丁优先（全平台，含 mac/鸿蒙）：环境支持 OTA + 版本更新 + 满足 minShell + 非黑名单
+    // 1) 渲染补丁优先：环境支持 OTA + 版本更新 + 满足 minShell + 非黑名单
     if (rendererUpdateAvailable(manifest, appV)) {
       ulog('check: -> renderer patch', manifest.rendererVersion)
       await stageRendererUpdate(manifest)
@@ -90,7 +89,7 @@ export async function checkForUpdates(manual: boolean): Promise<void> {
         const updater = await loadAutoUpdater() // 仅 Win/Linux 才动态加载 electron-updater
         await updater.checkForUpdates()
       } else if (manual) {
-        void shell.openExternal(RELEASES_URL) // mac 未签名 / 鸿蒙：引导手动下载
+        void shell.openExternal(RELEASES_URL) // mac 未签名：引导手动下载
         emitUpdater({ type: 'manual', url: RELEASES_URL })
       }
       return
@@ -121,7 +120,7 @@ export function initUpdates(opts: {
   })
   ipcMain.handle('app:get-version', () => app.getVersion())
 
-  // 非开发态：启动后延迟首检 + 周期检查（含鸿蒙 .hap；dev server 运行时跳过）
+  // 非开发态：启动后延迟首检 + 周期检查（dev server 运行时跳过）
   if (!process.env.VITE_DEV_SERVER_URL) {
     setTimeout(() => {
       void checkForUpdates(false)

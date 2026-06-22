@@ -57,12 +57,6 @@ const lyricsApi = {
     ipcRenderer.invoke('lyrics:get', id, format),
 }
 
-const persistentStorage = {
-  getItem: (key) => ipcRenderer.sendSync('persistent-storage:get', key),
-  setItem: (key, value) => ipcRenderer.send('persistent-storage:set', key, value),
-  removeItem: (key) => ipcRenderer.send('persistent-storage:remove', key),
-}
-
 contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
@@ -70,7 +64,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   toggleFullscreen: () => ipcRenderer.send('window:toggle-fullscreen'),
   isFullscreen: () => ipcRenderer.invoke('window:isFullscreen'),
-  setWindowButtonVisibility: (visible) => ipcRenderer.send('window:set-button-visibility', Boolean(visible)),
   onMaximizedChange: (callback) => {
     const listener = (_event, value) => callback(Boolean(value))
     ipcRenderer.on('window:maximized-change', listener)
@@ -105,7 +98,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   webdavPut: (relPath, content, etag) => ipcRenderer.invoke('webdav:put', relPath, content, etag),
   clearWebdav: () => ipcRenderer.invoke('webdav:clear'),
   platform: process.platform,
-  persistentStorage,
   biliApi,
   lyricsApi,
 })

@@ -7,9 +7,8 @@ import { emitUpdater, ulog } from './updaterBus'
 
 // 渲染热补丁：从 GitHub Releases 下发 renderer-<version>.asar，校验后由 app:// 从可写沙箱加载。
 // 单文件 asar（桌面端 net.fetch 读 asar 内部已被现有打包路径证明可用），无需解压、原子可回滚。
-// 鸿蒙：原生移植层能力（沙箱可写 / net.fetch 读 asar / 外网下载）未知 —— 全程防御化，
 // 任一能力缺失即优雅降级到包内 dist，绝不崩；坏包经 ready 心跳缺失自动回滚并加入黑名单。
-const REPO = 'HanversionOvO/BiliMusic'
+const REPO = 'shangzongyu/BiliMusic'
 const RELEASE_BASE = `https://github.com/${REPO}/releases/latest/download`
 export const OTA_MANIFEST_URL = `${RELEASE_BASE}/ota.json`
 
@@ -212,7 +211,7 @@ function applyNow(): void {
 export function initOtaUpdater(opts: { bundledRendererRoot: string; reload: () => void }): void {
   bundledRoot = opts.bundledRendererRoot
   reloadWindow = opts.reload
-  // 安全探测可写 OTA 目录：app.getPath / fs 在当前运行时（尤其鸿蒙 shim）可能不可用
+  // 安全探测可写 OTA 目录：app.getPath / fs 在当前运行时可能不可用
   try {
     const dir = path.join(app.getPath('userData'), 'ota')
     fs.mkdirSync(dir, { recursive: true })

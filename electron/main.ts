@@ -9,7 +9,6 @@ import { registerWebdavHandlers } from './webdav'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const isHarmonyOS = (process.platform as string) === 'openharmony'
 
 // 生产环境用自定义 app:// 协议加载渲染层：file:// 下 ESM(type=module) 脚本会被
 // Chromium 的 CORS 策略拦截（file:// 为不透明源）导致页面空白。自定义标准安全协议
@@ -117,8 +116,7 @@ function loadAppIcon(fileName = 'icon.png') {
 }
 
 function createTrayIcon() {
-  const trayIcon = isHarmonyOS ? loadAppIcon('tray.png') : loadAppIcon()
-  // 托盘图标尺寸较小，缩放到 32px 以兼顾标准与高 DPI 显示
+  const trayIcon = loadAppIcon()
   return trayIcon.resize({ width: 32, height: 32 })
 }
 
@@ -378,7 +376,6 @@ function getTrayHtml() {
 }
 
 function createTrayWindow() {
-  if (isHarmonyOS) return null
   if (trayWindow) return trayWindow
   trayWindowReady = false
   trayWindow = new BrowserWindow({
@@ -438,7 +435,6 @@ function showTrayWindowAt(x: number, y: number) {
 }
 
 function toggleTrayWindow() {
-  if (isHarmonyOS) return
   if (!tray) return
   const win = createTrayWindow()
   if (!win) return
@@ -466,10 +462,8 @@ function createTray() {
   tray.setToolTip('BiliMusic')
   tray.on('click', showMainWindow)
   tray.on('double-click', showMainWindow)
-  if (!isHarmonyOS) {
-    tray.on('right-click', toggleTrayWindow)
-    createTrayWindow()
-  }
+  tray.on('right-click', toggleTrayWindow)
+  createTrayWindow()
 }
 
 function hideToTray() {
@@ -504,7 +498,7 @@ function createWindow() {
     minimizable: true,
     maximizable: true,
     closable: true,
-    ...(!isHarmonyOS ? { titleBarStyle: 'hidden' as const } : {}),
+    titleBarStyle: 'hidden',
     backgroundColor: '#F6F7F9',
     icon: loadAppIcon(),
     webPreferences: {
@@ -569,17 +563,6 @@ ipcMain.on('window:toggle-fullscreen', () => {
   mainWindow.webContents.send('window:fullscreen-change', next)
   mainWindow.webContents.send('window:maximized-change', Boolean(mainWindow.isMaximized() || next))
 })
-ipcMain.on('window:set-button-visibility', (_event, visible: boolean) => {
-  if (!isHarmonyOS) return
-  const next = Boolean(visible)
-  const setWindowButtonVisibility = (mainWindow as unknown as {
-    setWindowButtonVisibility?: (visible: boolean) => void
-  } | null)?.setWindowButtonVisibility
-  if (typeof setWindowButtonVisibility === 'function') {
-    setWindowButtonVisibility.call(mainWindow, next)
-  }
-  mainWindow?.setTitle(`__BILIMUSIC_WINDOW_BUTTONS__:${next ? 'show' : 'hide'}`)
-})
 ipcMain.handle('window:isFullscreen', () => Boolean(mainWindow?.isFullScreen()))
 ipcMain.on('tray:player-state', (_event, state: TrayPlayerState) => {
   trayPlayerState = {
@@ -628,7 +611,7 @@ app.whenReady().then(() => {
       try {
         return await net.fetch(pathToFileURL(filePath).toString())
       } catch (err) {
-        // 关键诊断：鸿蒙上若读沙箱 asar 失败会在此命中（filePath 含 .asar）
+        // 关键诊断：若读沙箱 asar 失败会在此命中（filePath 含 .asar）
         console.log('[BiliMusic-OTA] app:// fetch FAILED:', filePath, '—', err instanceof Error ? err.message : String(err))
         throw err
       }
@@ -638,7 +621,6 @@ app.whenReady().then(() => {
   registerBiliApiHandlers()
   registerLyricsApiHandlers()
   registerWebdavHandlers()
-  // 更新模块须在创建窗口前初始化：bootReconcile 先定下生效的渲染层根目录，供 app:// 加载
   initUpdates({
     window: () => mainWindow,
     bundledRendererRoot: path.join(__dirname, '../dist'),
@@ -646,14 +628,8 @@ app.whenReady().then(() => {
       mainWindow?.loadURL('app://local/index.html')
     },
   })
-  if (isHarmonyOS) {
-    // OpenHarmony 上窗口显示/隐藏与托盘强相关，需先创建托盘再创建主窗口。
-    createTray()
-    createWindow()
-  } else {
-    createWindow()
-    createTray()
-  }
+  createWindow()
+  createTray()
 })
 
 app.on('window-all-closed', () => {

@@ -14,8 +14,6 @@
     "electron:dev": "vite",
     "electron:start": "npm run build && electron .",
     "electron:build": "npm run build && electron-builder",
-    "harmony:prepare": "npm run build && node scripts/prepare-harmony.mjs",
-    "harmony:build": "npm run harmony:prepare && node scripts/build-harmony.mjs",
     "build:ota": "npm run build && node scripts/build-ota.mjs"
   },
   "dependencies": {
@@ -50,7 +48,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "HanversionOvO",
+        "owner": "shangzongyu",
         "repo": "BiliMusic"
       }
     ],
