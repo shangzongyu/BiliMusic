@@ -7,7 +7,7 @@
   <p>
     <a href="./README.md">中文</a>
     ·
-    <a href="#-getting-started">Getting Started</a>
+    <a href="#getting-started">Getting Started</a>
     ·
     ·
     <a href="https://github.com/shangzongyu/BiliMusic">GitHub</a>
@@ -54,18 +54,18 @@
 
 ## Table of Contents
 
-- [Vision](#-vision)
-- [Experience Highlights](#-experience-highlights)
-- [Feature Map](#-feature-map)
-- [Interface Design](#-interface-design)
-- [Architecture](#-architecture)
-- [Getting Started](#-getting-started)
-- [Desktop Packaging](#-desktop-packaging)
-- [Project Structure](#-project-structure)
-- [Persistence](#-persistence)
-- [Development Notes](#-development-notes)
-- [Roadmap](#-roadmap)
-- [Disclaimer](#-disclaimer)
+- [Vision](#vision)
+- [Experience Highlights](#experience-highlights)
+- [Feature Map](#feature-map)
+- [Interface Design](#interface-design)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [Desktop Packaging](#desktop-packaging)
+- [Project Structure](#project-structure)
+- [Persistence](#persistence)
+- [Development Notes](#development-notes)
+- [Roadmap](#roadmap)
+- [Disclaimer](#disclaimer)
 
 ## Vision
 
